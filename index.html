@@ -1,0 +1,2083 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Swell Surfer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Press+Start+2P&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: one column "expedition log" — game cabinet on top, chest + collection + save ledger below. Single night-desert look by choice. */
+:root{
+  --night:#06182a; --night-2:#0a2238; --panel:#123a5a; --line:#2a6a9a;
+  --sand:#7fe0ff; --sand-deep:#2a7ab0; --faience:#ffd27a; --ink:#f4f8fc; --muted:#a8c0d8;
+  --danger:#ff6b6b;
+  --r-common:#b9bcc9; --r-uncommon:#6fd36a; --r-rare:#4aa8ff; --r-epic:#b77bff; --r-legendary:#ffb23f; --r-mythic:#ff5ea8;
+  --display:"Pixelify Sans", "Courier New", monospace;
+  --num:"Press Start 2P", "Pixelify Sans", "Courier New", monospace;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  background-image:radial-gradient(circle at 15% -10%, #2f5a26 0, transparent 45%), radial-gradient(circle at 95% 5%, #4a4220 0, transparent 40%);
+  background-attachment:fixed}
+.wrap{max-width:1040px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--faience);outline-offset:2px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-size:30px;color:var(--sand)}
+.brand span{font-family:var(--display);color:var(--muted);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.purse{display:flex;gap:10px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-family:var(--display);font-size:16px;font-variant-numeric:tabular-nums}
+.coin-ic{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,#ffc83a 55%,#a87010);box-shadow:0 0 0 2px #8a5a10 inset}
+.chip small{font-family:var(--body);color:var(--muted);font-size:12px}
+
+/* account banner */
+.acct{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:20px 28px;align-items:center;padding:22px;border-radius:16px;
+  background:linear-gradient(120deg,#0f4a6a,#0a3050 55%,#0f5a5a);border:2px solid var(--sand);box-shadow:0 0 0 4px rgba(255,162,95,.15),0 0 28px rgba(255,162,95,.22),0 16px 36px rgba(0,0,0,.35)}
+.acct h2{font-size:clamp(26px,4.4vw,40px);color:var(--sand);line-height:1.05}
+.acct-copy{display:flex;flex-direction:column;gap:10px;min-width:0}
+.acct-copy p{margin:0;font-size:17px;max-width:46ch}
+.acct-form{display:flex;flex-direction:column;gap:10px;min-width:0}
+.acct-form input{font-size:16px;padding:12px 14px}
+.btn.big{font-size:20px;padding:14px 22px}
+.tabs{display:flex;gap:6px;background:#141536;border:1px solid var(--line);border-radius:12px;padding:4px}
+.tabs button{flex:1;border:0;border-radius:9px;padding:9px;background:transparent;color:var(--muted);font-family:var(--display);font-size:17px}
+.tabs button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.acct.signed{grid-template-columns:1fr auto;padding:12px 18px;border-width:1px;border-color:var(--line);box-shadow:none;background:var(--night-2)}
+.acct.signed h2,.acct.signed #acctLead{display:none}
+.acct.signed .acct-copy{gap:0}
+@media (max-width:760px){.acct{grid-template-columns:minmax(0,1fr)}.acct.signed{grid-template-columns:minmax(0,1fr)}}
+
+/* end-of-run sign-up prompt */
+.over-cta{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:12px;background:rgba(10,18,12,.94)}
+.oc-card{max-width:520px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.oc-card h3{font-size:clamp(20px,3vw,28px);color:#ff9a8a}
+.oc-card h3 span{color:var(--ink)}
+.oc-card p{margin:0;font-size:15px}
+.oc-btns{justify-content:center}
+.oc-again{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:14px;padding:4px}
+@media (max-width:640px){.screen{display:flex;flex-direction:column}.over-cta{order:2;position:static;background:#16173a;border-top:1px solid var(--line);padding:16px}.btn.big{font-size:18px}}
+
+/* phones and touch screens */
+@media (max-width:700px){
+  .wrap{gap:16px;padding-block:12px 32px}
+  .brand h1{font-size:24px}
+  .brand span{display:none}
+  .purse{gap:6px;width:100%}
+  .chip{padding:5px 10px;font-size:14px}
+  .acct{padding:16px;gap:14px}
+  .acct-copy p{font-size:15px}
+  .cabinet{padding:6px;border-radius:12px;margin-left:calc(-1 * max(10px, env(safe-area-inset-left, 0px)) + 4px);margin-right:calc(-1 * max(10px, env(safe-area-inset-right, 0px)) + 4px)}
+  .controls{padding:8px 2px 2px;gap:8px}
+  .runner-now{order:2;font-size:12px}
+}
+
+.tap-hint{display:none;color:var(--muted);font-size:14px;text-align:center;width:100%}
+@media (pointer:coarse){ .keys{display:none} .tap-hint{display:block} .controls{flex-direction:column;align-items:stretch} .runner-now{justify-content:center} }
+
+/* turn-your-phone overlay: shown only on touch phones held sideways */
+.rotate{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
+  background:var(--night);padding:24px max(24px, env(safe-area-inset-right, 0px)) 24px max(24px, env(safe-area-inset-left, 0px))}
+.rotate h2{font-size:28px;color:var(--sand)} .rotate p{margin:0;color:var(--muted);font-size:16px}
+.rotate .phone{width:46px;height:78px;border:4px solid var(--sand);border-radius:10px;position:relative;animation:tilt 2s ease-in-out infinite}
+.rotate .phone::after{content:"";position:absolute;left:50%;bottom:5px;width:10px;height:3px;margin-left:-5px;border-radius:2px;background:var(--sand)}
+@keyframes tilt{0%,30%{transform:rotate(-90deg)}60%,100%{transform:rotate(0)}}
+@media (pointer:coarse) and (orientation:landscape) and (max-height:520px){ .rotate{display:flex} body{overflow:hidden} }
+
+/* full-screen chest opening */
+.chest-full{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 45%, #2c4a2a 0, #0b0b20 75%);
+  padding:max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
+.cf-rays{position:absolute;left:50%;top:44%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;opacity:0;transition:none;
+  background:repeating-conic-gradient(from 0deg, var(--cf, #ffd34d) 0deg 7deg, transparent 7deg 22deg);
+  -webkit-mask:radial-gradient(circle, #000 0, transparent 55%);mask:radial-gradient(circle, #000 0, transparent 55%);animation:spin 18s linear infinite}
+.chest-full.revealed .cf-rays{opacity:var(--rayop,.28);animation-duration:var(--rayspd,18s);transition:opacity .4s}
+.chest-full[data-tier="5"].revealed .cf-rays{background:repeating-conic-gradient(from 0deg, #ff4f6b 0 6deg, transparent 6deg 15deg, #ffd34d 15deg 21deg, transparent 21deg 30deg, #5fe03a 30deg 36deg, transparent 36deg 45deg, #2de2e6 45deg 51deg, transparent 51deg 60deg, #b77bff 60deg 66deg, transparent 66deg 75deg)}
+.cf-fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.cf-inner{z-index:3}
+.cf-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+.cf-flash.go{animation:flash .6s ease-out}
+.cf-flash.go2{animation:flash2 1.1s ease-out}
+@keyframes flash{0%{opacity:var(--flash,.8)}100%{opacity:0}}
+@keyframes flash2{0%{opacity:1}20%{opacity:0}35%{opacity:.9}100%{opacity:0}}
+.chest-full{transition:background-color .6s}
+.chest-full.dim{background:#03020a}
+.chest-full .cf-chest{transition:filter .5s}
+.chest-full.glowing .cf-chest{filter:drop-shadow(0 0 var(--glowpx,12px) var(--cf)) drop-shadow(0 0 calc(var(--glowpx,12px) * 2) var(--cf))}
+.chest-full[data-tier="5"].glowing .cf-chest{animation:shake var(--shk,.12s) linear infinite, rainbow 1s linear infinite}
+@keyframes rainbow{to{filter:hue-rotate(360deg) drop-shadow(0 0 24px #ff4fa3)}}
+.chest-full.shaking .cf-chest{animation-duration:var(--shk,.12s)}
+.chest-full.quake .cf-inner{animation:quake .6s}
+@keyframes quake{0%,100%{transform:none}15%{transform:translate(-8px,4px)}30%{transform:translate(7px,-5px)}45%{transform:translate(-6px,-3px)}60%{transform:translate(5px,4px)}75%{transform:translate(-3px,2px)}}
+.chest-full.revealed[data-tier="3"] .cf-tier,.chest-full.revealed[data-tier="4"] .cf-tier,.chest-full.revealed[data-tier="5"] .cf-tier{animation:slam .55s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes slam{0%{transform:scale(3.2);opacity:0}100%{transform:scale(1);opacity:1}}
+.chest-full[data-tier="4"] .cf-tier{font-size:clamp(24px,7vw,34px);box-shadow:0 0 18px rgba(255,178,63,.5)}
+.chest-full[data-tier="5"] .cf-tier{font-size:clamp(30px,9vw,44px);border-width:3px;background:linear-gradient(90deg,#ff4f6b,#ffd34d,#5fe03a,#2de2e6,#b77bff,#ff4f6b);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent !important;border-color:#ff5ea8;animation:slam .6s cubic-bezier(.2,1.6,.4,1) both, goldshine 2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cf-inner{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:min(100%,520px)}
+.cf-char{width:min(56vw,250px);height:min(56vw,250px);opacity:0;transform:translateY(40%) scale(.3)}
+.chest-full.revealed .cf-char{animation:rise .7s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.cf-chest{width:min(52vw,230px);height:min(52vw,230px);margin-top:-14%}
+.chest-full.shaking .cf-chest{animation:shake .12s linear infinite}
+.cf-info{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;opacity:0;transform:translateY(10px);transition:none;visibility:hidden}
+.chest-full.revealed .cf-info{opacity:1;transform:none;visibility:visible;transition:opacity .4s .35s, transform .4s .35s}
+.cf-tier{font-family:var(--display);font-size:clamp(18px,5vw,24px);letter-spacing:.14em;text-transform:uppercase;padding:4px 16px;border-radius:999px;border:2px solid currentColor}
+.cf-name{font-family:var(--display);font-weight:700;font-size:clamp(30px,9vw,46px);line-height:1.05;text-wrap:balance}
+.cf-note{color:var(--muted);font-size:16px}
+.cf-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.cf-hint{color:var(--muted);font-size:15px;font-family:var(--display);height:1.4em}
+.chest-full.revealed .cf-hint{display:none}
+@media (prefers-reduced-motion: reduce){ .cf-flash.go,.cf-flash.go2,.chest-full.quake .cf-inner{animation:none} .cf-rays{animation:none} .chest-full.shaking .cf-chest{animation:none} .chest-full.revealed .cf-char{animation:none;opacity:1;transform:none} }
+
+/* numbers: blocky arcade font, easy to read */
+#hudCoins,#hudOwned,#hudBest{font-family:var(--num);font-size:12px;line-height:1.4}
+.odds td:not(:first-child){font-family:var(--num);font-size:11px}
+.best-big b{font-family:var(--num) !important;font-size:clamp(22px,5vw,32px) !important;line-height:1.4 !important}
+.recs dd{font-family:var(--num) !important;font-size:14px !important;line-height:1.8}
+.lb .sc{font-family:var(--num) !important;font-size:12px !important}
+.lb .rk{font-family:var(--num) !important;font-size:14px !important}
+.card .num,.card .cnt{font-family:var(--num) !important;font-size:8px !important}
+.chip small{font-size:12px}
+#ocSum{font-family:var(--num);font-size:.6em}
+
+/* full-screen game on phones */
+.fs-exit{display:none}
+body.fs .cabinet{position:fixed;inset:0;z-index:45;margin:0;border:0;border-radius:0;box-shadow:none;padding:env(safe-area-inset-top, 0px) 0 0 0;background:#0d0b2a;display:flex;flex-direction:column}
+body.fs .screen{flex:1;border-radius:0;display:block;position:relative}
+body.fs canvas#game{width:100%;height:100%}
+body.fs .controls{display:none}
+body.fs .fs-exit{display:block;
+  font-family:var(--display);font-size:15px;color:var(--ink);background:rgba(10,20,12,.7);border:1px solid var(--line);border-radius:999px;padding:7px 20px}
+body.fs .over-cta{position:absolute;left:0;right:0;top:auto;bottom:calc(56px + env(safe-area-inset-bottom, 0px));background:rgba(10,20,12,.92);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+body.fs .rotate{z-index:70}
+
+/* sound buttons */
+.snd{display:flex;gap:8px;justify-content:center}
+.snd-btn{white-space:nowrap;font-family:var(--display);font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.snd-btn[aria-pressed="false"]{color:var(--muted);background:transparent;text-decoration:line-through}
+.fs-bar{display:none}
+body.fs .fs-bar{display:flex;gap:8px;align-items:center;position:absolute;z-index:3;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom, 0px))}
+body.fs .fs-bar .snd-btn{background:rgba(10,20,12,.7);padding:7px 12px}
+
+/* test swim mode */
+.test-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:12px 16px;border-radius:12px;background:repeating-linear-gradient(45deg,#2a2210,#2a2210 12px,#1f1a0c 12px,#1f1a0c 24px);border:2px dashed #ffd34d;color:var(--ink);font-size:14px}
+.test-bar b{font-family:var(--display);color:#ffd34d;font-size:17px}
+.test-bar span{flex:1;min-width:200px;color:#e8dcb8}
+body.testing .card .num::after{content:" · TEST";color:#ffd34d}
+
+/* THE CREATOR's name: gold lettering */
+.creator{font-weight:800 !important;letter-spacing:.08em;background:linear-gradient(90deg,#ffd34d,#fff6c8,#ffb000,#fff6c8,#ffd34d);background-size:200% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent !important;animation:goldshine 3s linear infinite;filter:drop-shadow(0 0 6px rgba(255,200,60,.45))}
+@keyframes goldshine{to{background-position:200% 0}}
+@media (prefers-reduced-motion: reduce){.creator{animation:none}}
+
+/* the kraken: the whole page goes dark and shakes */
+body.kraken::after{content:"";position:fixed;inset:0;z-index:40;pointer-events:none;background:radial-gradient(circle at 50% 40%, rgba(0,0,0,.55), rgba(0,0,0,.92));animation:krakenfade .8s ease-out both}
+body.kraken:not(.fs) .cabinet{position:relative;z-index:41;animation:quake .35s infinite}
+body.kraken.fs .cabinet{z-index:45}
+@keyframes krakenfade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){ body.kraken:not(.fs) .cabinet{animation:none} }
+
+/* leaderboard + records */
+.lbgrid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+@media (max-width:820px){.lbgrid{grid-template-columns:minmax(0,1fr)}}
+.lb-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.lb{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;counter-reset:none}
+.lb li{display:grid;grid-template-columns:30px 72px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 10px;border-radius:10px;background:#1a2a1c;border:1px solid #2e4a2c}
+.lb li.me{border-color:var(--sand);background:#284428}
+.lb .rk{font-family:var(--display);font-size:18px;color:var(--muted);text-align:center}
+.lb li:nth-child(1) .rk{color:#ffd34d} .lb li:nth-child(2) .rk{color:#d6dbe6} .lb li:nth-child(3) .rk{color:#e09a5a}
+.lb canvas{width:72px;height:40px}
+.lb .who2{display:flex;flex-direction:column;min-width:0}
+.lb .car{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .sc{font-family:var(--display);font-size:17px;font-variant-numeric:tabular-nums}
+.lb .empty{display:block;color:var(--muted);text-align:center;padding:18px}
+.lb-you{font-size:14px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lb-you b{color:var(--ink)}
+.best-big{display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:12px;background:#1a2a1c;border:1px solid var(--line)}
+.best-big b{font-family:var(--display);font-size:clamp(34px,6vw,48px);color:var(--faience);line-height:1.1;font-variant-numeric:tabular-nums}
+.recs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}
+.recs div{padding:10px 12px;border-radius:10px;background:#1a2a1c;border:1px solid #2e4a2c}
+.recs dt{font-size:12px;color:var(--muted)} .recs dd{margin:0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.namebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.namebox input{width:11em}
+.acct.signed{grid-template-columns:minmax(0,1fr)}
+
+/* cabinet */
+.cabinet{background:linear-gradient(#0e3a58,#06223a);border:2px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.screen{position:relative;border-radius:8px;overflow:hidden;background:#0c0d24}
+canvas#game{display:block;width:100%;height:auto;aspect-ratio:8/3;image-rendering:pixelated;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.controls{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 4px 2px}
+.keys{color:var(--muted);font-size:13px}
+kbd{font-family:var(--display);background:var(--night);border:1px solid var(--line);border-bottom-width:3px;border-radius:5px;padding:0 6px;color:var(--ink);font-size:12px}
+.runner-now{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.runner-now canvas{width:56px;height:32px}
+.runner-now b{color:var(--ink);font-weight:700}
+
+/* panels */
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:22px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--night-2);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h2{font-size:21px;color:var(--sand)}
+.sub{color:var(--muted);font-size:14px;margin:0}
+.btn{border:0;border-radius:10px;padding:11px 18px;font-family:var(--display);font-size:16px;font-weight:600;background:var(--sand);color:#2a1006;border-bottom:4px solid var(--sand-deep)}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:translateY(2px);border-bottom-width:2px}
+.btn[disabled]{background:#4a6a42;color:#a8bc98;border-bottom-color:#34503a;cursor:not-allowed;filter:none;transform:none}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);border-bottom:3px solid var(--line)}
+.btn.small{padding:7px 12px;font-size:14px}
+
+/* chest */
+.chest-stage{position:relative;display:grid;place-items:center;min-height:210px;border-radius:12px;background:radial-gradient(circle at 50% 70%, #3a5a34 0, #1b1d44 70%);overflow:hidden}
+.chest-stage canvas{width:150px;height:150px}
+.chest-stage.shake canvas#chestCv{animation:shake .14s linear infinite}
+@keyframes shake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,1px) rotate(-3deg)}50%{transform:translate(2px,-1px) rotate(2deg)}75%{transform:translate(-1px,2px) rotate(-1deg)}100%{transform:translate(0,0)}}
+.tag{display:inline-block;font-family:var(--display);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:2px 9px;border-radius:999px;border:1px solid currentColor}
+.chest-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.progress{height:10px;border-radius:99px;background:#121334;border:1px solid var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,#f2b33d,#ffe08a);width:0;transition:width .3s}
+
+/* odds table */
+.odds{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+.odds th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:0 6px 6px;border-bottom:1px solid var(--line)}
+.odds td{padding:6px;border-bottom:1px solid #2e4a2c}
+.odds td:first-child{font-family:var(--display);font-size:15px}
+.odds tr:last-child td{border-bottom:0}
+.tablewrap{overflow-x:auto}
+
+/* collection */
+.coll-head{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:4px 11px;font-size:13px}
+.filters button[aria-pressed="true"]{background:var(--panel);color:var(--ink);border-color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.card{position:relative;background:#1a2a1c;border:1px solid var(--line);border-top:3px solid var(--rc);border-radius:10px;padding:8px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink);text-align:center;min-width:0}
+.card canvas{width:100%;max-width:92px;height:auto;aspect-ratio:168/96}
+.card .cn{font-size:12px;line-height:1.2;font-weight:700;min-height:2.4em;display:flex;align-items:center}
+.card .cr{font-family:var(--display);font-size:11px;color:var(--rc);letter-spacing:.06em;text-transform:uppercase}
+.card.locked .cn{color:#7a9a6e}
+.card.sel{outline:2px solid var(--sand);outline-offset:1px;background:#24275a}
+.card .cnt{position:absolute;top:4px;right:6px;font-family:var(--display);font-size:11px;color:var(--muted)}
+.card .num{position:absolute;top:4px;left:6px;font-family:var(--display);font-size:10px;color:#6a8a5e}
+button.card:hover:not(.locked){background:#202354}
+button.card.locked{cursor:default}
+
+/* save ledger */
+.save-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.box{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;background:#181a40;min-width:0}
+.box h3{font-size:16px;color:var(--ink)}
+.status{display:flex;align-items:center;gap:8px;font-size:14px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.dot.ok{background:var(--r-uncommon)} .dot.local{background:var(--sand)} .dot.err{background:var(--danger)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text],input[type=email],input[type=password],select,textarea{background:#101133;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit;font-size:14px;min-width:0}
+textarea{width:100%;resize:vertical;min-height:64px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.row input[type=text]{flex:1}
+.msg{font-size:13px;color:var(--muted);min-height:1.2em;margin:0}
+.who{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.who img{width:32px;height:32px;border-radius:50%}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--danger)}
+
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--sand);color:var(--ink);padding:10px 16px;border-radius:10px;font-family:var(--display);opacity:0;transition:.25s;pointer-events:none;z-index:20;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){.chest-stage.shake canvas#chestCv{animation:none}.toast,.progress i{transition:none}}
+
+/* the whole thing is one full-screen app: only the game shows; the account box pops up as a card */
+body.app{overflow:hidden;background:#05060e}
+body.app .wrap{padding:0;max-width:none}
+body.app .wrap > :not(.cabinet):not(#acct):not(.test-bar){display:none !important}
+body.app .fs-bar,body.app .fs-exit,body.app .over-cta,body.app .controls,body.app .rotate{display:none !important}
+body.app .cabinet{background:#05060e;padding:0}
+body.app .test-bar:not([hidden]){position:fixed;top:0;left:0;right:0;z-index:50;border-radius:0;margin:0}
+body.app #acct{display:none}
+body.app.sheet::after{content:"";position:fixed;inset:0;background:rgba(2,3,12,.72);z-index:55}
+body.app.sheet #acct{display:flex;flex-direction:column;gap:14px;position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,440px);max-height:88vh;overflow:auto;margin:0;border-radius:20px;box-shadow:0 8px 0 #0a0c1e,0 20px 60px rgba(0,0,0,.6)}
+.sheet-x{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:12px;border:0;background:#3a4478;color:#fff;font:700 20px "Pixelify Sans",sans-serif;cursor:pointer;box-shadow:0 4px 0 #1c2140}
+body:not(.app) .sheet-x{display:none}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ===== PASTE YOUR FIREBASE SETTINGS HERE (Firebase console > Project settings > Your apps) ===== */
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC51bS7c1dGrUAZ22-dPEvdc-GIlVE3578",
+  authDomain: "relic-runner-5ab77.firebaseapp.com",
+  projectId: "relic-runner-5ab77",
+  storageBucket: "relic-runner-5ab77.firebasestorage.app",
+  messagingSenderId: "583088901590",
+  appId: "1:583088901590:web:936fb95ef9c7ac2c5ae877"
+};
+</script>
+</head><body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1 id="brandTitle">Swell Surfer</h1><span>Ride the waves</span></div>
+    <div class="purse">
+      <div class="chip" title="Coins to spend"><span class="coin-ic"></span><span id="hudCoins">0</span><small>coins</small></div>
+      <div class="chip" title="Dogs unlocked"><span id="hudOwned">1</span><small id="hudTotal">/ 100 found</small></div>
+      <div class="chip" title="Best run"><small>Best</small><span id="hudBest">0 m</span></div>
+    </div>
+  </header>
+
+  <div class="test-bar" id="testBar" hidden><b>Test ride mode</b><span>Every boat is unlocked to try. Coins, upgrades, best scores and the leaderboard are paused.</span><button class="btn small" id="testOff" type="button">Exit test mode</button></div>
+  <section class="acct" id="acct" aria-labelledby="acctH"><button class="sheet-x" id="sheetClose" type="button" aria-label="Close">✕</button>
+    <div class="acct-copy">
+      <h2 id="acctH">Save your garage</h2>
+      <p id="acctLead">Sign up free to save your progress, keep your coins, boats and upgrades. Then play on any device.</p>
+      <div class="status"><span class="dot" id="saveDot"></span><span id="saveText">Checking for your account…</span></div>
+    </div>
+    <form id="authBox" class="acct-form" hidden novalidate>
+      <div class="tabs" role="group" aria-label="Sign up or log in">
+        <button type="button" id="tabSignup" aria-pressed="true">Sign up</button>
+        <button type="button" id="tabLogin" aria-pressed="false">Log in</button>
+      </div>
+      <input type="email" id="authEmail" placeholder="Email" autocomplete="email" aria-label="Email">
+      <input type="password" id="authPass" placeholder="Password (6 or more characters)" autocomplete="new-password" aria-label="Password">
+      <button class="btn big" id="authSubmit" type="submit">Create my free account</button>
+      <div class="row"><button class="btn ghost small" id="authGoogle" type="button">Continue with Google</button><button class="btn ghost small" id="authReset" type="button" hidden>Forgot password</button></div>
+      <p class="msg" id="authMsg" role="status"></p>
+    </form>
+    <div class="who" id="whoBox" hidden>
+      <div>Logged in as <b id="whoName"></b></div>
+      <form class="namebox" id="nameForm"><label for="nameInput">Leaderboard name</label><input type="text" id="nameInput" maxlength="16" autocomplete="nickname"><button class="btn small" type="submit">Save name</button></form>
+      <button class="btn ghost small" id="logoutBtn" type="button">Log out</button>
+    </div>
+  </section>
+
+  <section class="cabinet" aria-label="Game">
+    <div class="screen"><div class="fs-bar"><button class="fs-exit" id="fsExit" type="button">Exit</button><button class="snd-btn" data-snd="sfx" type="button" aria-pressed="true">Sound: On</button></div><div class="over-cta" id="overCta" hidden>
+      <div class="oc-card">
+        <h3>Wipeout! <span id="ocSum"></span></h3>
+        <p>You're not signed in, so your coins and boats are only saved on this device. Sign up to save your progress, keep your coins, save your boats and get on today's leaderboard.</p>
+        <div class="row oc-btns"><button class="btn big" id="ocSignup" type="button">Sign up to save</button><button class="btn ghost" id="ocLogin" type="button">Log in</button></div>
+        <button class="oc-again" id="ocAgain" type="button">Play again without saving</button>
+      </div>
+    </div><canvas id="game" width="960" height="360" aria-label="Swell Surfer game screen. Hold the right arrow or the right side of the screen for gas, left for brake."></canvas></div>
+    <div class="controls">
+      <div class="runner-now"><canvas id="nowCv" width="112" height="64"></canvas><div>Running as <b id="nowName">—</b><br><span id="nowPerk"></span></div></div>
+      <div class="keys"><kbd>Space</kbd>, <kbd>↑</kbd> or click to jump (hold for higher) · <kbd>P</kbd> pause</div>
+      <div class="tap-hint">Tap the game to jump. Hold for a higher jump.</div>
+      <div class="snd"><button class="snd-btn" data-snd="sfx" type="button" aria-pressed="true">Sound: On</button></div>
+    </div>
+  </section>
+
+  <div class="grid2 lbgrid">
+    <section class="panel" aria-labelledby="lbH">
+      <div class="lb-head"><h2 id="lbH">Today's leaderboard</h2><span class="sub" id="lbReset"></span></div>
+      <ol class="lb" id="lbList"></ol>
+      <p class="msg" id="lbMsg"></p>
+      <div class="lb-you" id="lbYou"></div>
+    </section>
+    <section class="panel" aria-labelledby="recH">
+      <h2 id="recH">Your records</h2>
+      <div class="best-big"><span class="sub">All-time best</span><b id="recBest">0 m</b></div>
+      <dl class="recs">
+        <div><dt>Furthest round</dt><dd id="recRound">—</dd></div>
+        <div><dt>Runs played</dt><dd id="recRuns">0</dd></div>
+        <div><dt>Coins earned, all time</dt><dd id="recLife">0</dd></div>
+        <div><dt>Chests opened</dt><dd id="recChests">0</dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="panel" aria-labelledby="chestH">
+      <h2 id="chestH">Treasure Chest</h2>
+      <p class="sub">Save up 100 coins and crack open a chest for a random dog. Duplicates pay back coins.</p>
+      <div class="chest-stage" id="chestStage">
+        <canvas id="chestCv" width="300" height="300"></canvas>
+      </div>
+      <div class="progress" aria-hidden="true"><i id="chestBar"></i></div>
+      <div class="chest-row">
+        <button class="btn" id="openChest" type="button">Open chest · 100</button>
+        <span class="sub" id="chestHint"></span>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="oddsH">
+      <h2 id="oddsH">Rarity &amp; drop odds</h2>
+      <p class="sub">Rarity only changes how a boat looks. Every boat earns coins the same way.</p>
+      <div class="tablewrap">
+        <table class="odds">
+          <thead><tr><th>Rarity</th><th>Dogs</th><th>Chest odds</th><th>Dupe refund</th><th>Found</th></tr></thead>
+          <tbody id="oddsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="collH">
+    <div class="coll-head">
+      <div><h2 id="collH">Collection</h2><p class="sub">Tap a boat you own to run with it.</p></div>
+      <div class="filters" id="filters" role="group" aria-label="Filter by rarity"></div>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="saveH">
+    <h2 id="saveH">Player &amp; saves</h2>
+    <div class="save-grid">
+      <div class="box">
+        <h3>Play without an account</h3>
+        <div id="localBox">
+          <p class="sub" style="margin-bottom:8px">Profiles saved on this device only. Each one keeps its own coins and characters.</p>
+          <div class="row"><select id="profileSel" aria-label="Choose player"></select><button class="btn ghost small" id="delProfile" type="button">Delete</button></div>
+          <div class="confirm" id="delConfirm" hidden><span id="delText"></span><button class="btn small" id="delYes" type="button">Delete</button><button class="btn ghost small" id="delNo" type="button">Keep</button></div>
+          <div class="row" style="margin-top:8px"><input type="text" id="newProfile" maxlength="20" placeholder="New player name" aria-label="New player name"><button class="btn small" id="addProfile" type="button">Add player</button></div>
+        </div>
+        <p class="msg" id="acctMsg"></p>
+      </div>
+      <div class="box">
+        <h3>Save code</h3>
+        <p class="sub">Copy this code to back up your progress or move it to another device, then paste it there and load it.</p>
+        <textarea id="codeBox" aria-label="Save code" spellcheck="false"></textarea>
+        <div class="row"><button class="btn small" id="copyCode" type="button">Copy my save code</button><button class="btn ghost small" id="loadCode" type="button">Load pasted code</button></div>
+        <div class="confirm" id="loadConfirm" hidden><span>This replaces the current progress.</span><button class="btn small" id="loadYes" type="button">Replace</button><button class="btn ghost small" id="loadNo" type="button">Cancel</button></div>
+        <p class="msg" id="codeMsg"></p>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="rotate" id="rotate" aria-live="polite"><div class="phone" aria-hidden="true"></div><h2>Turn your phone upright</h2><p>Turn your phone upright to play.</p></div>
+<div class="chest-full" id="chestFull" hidden role="dialog" aria-modal="true" aria-labelledby="cfName">
+  <div class="cf-rays" aria-hidden="true"></div>
+  <canvas class="cf-fx" id="cfFx" aria-hidden="true"></canvas>
+  <div class="cf-flash" id="cfFlash" aria-hidden="true"></div>
+  <div class="cf-inner">
+    <canvas class="cf-char" id="cfChar" width="400" height="400" aria-hidden="true"></canvas>
+    <canvas class="cf-chest" id="cfChest" width="300" height="300" aria-hidden="true"></canvas>
+    <div class="cf-hint" id="cfHint">Opening…</div>
+    <div class="cf-info">
+      <span class="cf-tier" id="cfTier"></span>
+      <div class="cf-name" id="cfName"></div>
+      <div class="cf-note" id="cfNote"></div>
+      <div class="cf-btns"><button class="btn big" id="cfRun" type="button">Run with this one</button><button class="btn ghost" id="cfAgain" type="button">Open another · 100</button><button class="btn ghost" id="cfClose" type="button">Close</button></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+/* ============================== BOATS ==============================
+   Every vehicle is bought with coins in the Garage, then upgraded piece by piece: Engine, Handling, Fuel tank and Hull.
+   Rarity colors are only for looks here; nothing comes from chests. */
+const TIERS = [
+  {key:"common",    name:"Common",    color:"#b9bcc9", weight:48, refund:50},
+  {key:"uncommon",  name:"Uncommon",  color:"#6fd36a", weight:25, refund:75},
+  {key:"rare",      name:"Rare",      color:"#4aa8ff", weight:14, refund:125},
+  {key:"epic",      name:"Epic",      color:"#b77bff", weight:7,  refund:200},
+  {key:"legendary", name:"Legendary", color:"#ffb23f", weight:3,  refund:300},
+  {key:"mythic",    name:"Mythic",    color:"#ff5ea8", weight:3,  refund:500},
+];
+/* price, and the base numbers before upgrades:
+   L length (world px), thrust (push), vmax (top speed), air (how fast it tips in the air), tank (seconds of full gas),
+   stab (how hard it rights itself in the water), lift (how high it floats), head (rider's head, measured up from the deck) */
+const BOAT_LIST = [
+  {tier:0, name:"Jet Ski",        body:"jetski",  price:0,      main:"#e83a3a", accent:"#ffffff", L:40, H:9,  thrust:390, vmax:325, air:7.2, tank:20, stab:1.0, lift:0,  blurb:"Light and quick to flip"},
+  {tier:0, name:"Bass Boat",      body:"bass",    price:1500,   main:"#2a7ad8", accent:"#e8ecf4", L:58, H:10, thrust:364, vmax:325, air:5.2, tank:27, stab:1.45, lift:0, blurb:"Steady and easy to land"},
+  {tier:1, name:"Speedboat",      body:"speed",   price:4000,   main:"#f4f4f8", accent:"#e0263a", L:66, H:12, thrust:481, vmax:429, air:5.0, tank:24, stab:1.2, lift:0,  blurb:"Fast on the flats"},
+  {tier:1, name:"Pontoon Boat",   body:"pontoon", price:7500,   main:"#d8dce8", accent:"#2a8a6a", L:76, H:12, thrust:351, vmax:312, air:3.6, tank:42, stab:2.1, lift:0,  blurb:"Huge tank, almost can't tip"},
+  {tier:2, name:"Airboat",        body:"airboat", price:12000,  main:"#5a8a3a", accent:"#c8c8d0", L:60, H:10, thrust:429, vmax:403, air:5.6, tank:28, stab:1.4, lift:0,  blurb:"Its fan still pushes in the air"},
+  {tier:3, name:"Hydroplane",     body:"hydro",   price:20000,  main:"#ffcf2a", accent:"#1c1c22", L:72, H:9,  thrust:598, vmax:559, air:6.0, tank:22, stab:.95, lift:0,  blurb:"Blazing fast, flips easily"},
+  {tier:3, name:"Hovercraft",     body:"hover",   price:32000,  main:"#ff8a2a", accent:"#2a2a30", L:62, H:12, thrust:494, vmax:481, air:6.4, tank:32, stab:1.5, lift:6,  blurb:"Floats on a cushion of air"},
+  {tier:4, name:"Racing Jet Ski", body:"racejet", price:45000,  main:"#2ab8ff", accent:"#ffd34d", L:42, H:9,  thrust:624, vmax:546, air:10,  tank:24, stab:1.15, lift:0, blurb:"Flips on a dime"},
+  {tier:4, name:"Mega Yacht",     body:"yacht",   price:70000,  main:"#f4f6fa", accent:"#1a3a6a", L:104,H:16, thrust:468, vmax:429, air:2.6, tank:63, stab:2.8, lift:0,  blurb:"Rides over monster waves"},
+  {tier:5, name:"THE CREATOR",    body:"creator", price:150000, main:"#1c1c22", accent:"#ffd34d", L:76, H:12, thrust:728, vmax:676, air:9.0, tank:48, stab:2.1, lift:0,  blurb:"The boss of the sea"},
+];
+const CHARS = BOAT_LIST.map((b, id) => Object.assign({id, ex:"", starter: id === 0}, b));
+const SORTED = [...CHARS];
+const carNo = c => c.id + 1;
+const isCreator = c => c.name === "THE CREATOR";
+const tierCounts = TIERS.map((_, i) => CHARS.filter(c => c.tier === i).length);
+const themeFor = c => null;
+const hexRGB = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const rgba = (hex, a) => { const [r, g, b] = hexRGB(hex); return `rgba(${r},${g},${b},${a})`; };
+const shade = (hex, k) => { let [r, g, b] = hexRGB(hex); const f = v => Math.max(0, Math.min(255, Math.round(k < 0 ? v*(1 + k) : v + (255 - v)*k))); return `rgb(${f(r)},${f(g)},${f(b)})`; };
+
+/* ---------- upgrades ---------- */
+const UPGRADES = [
+  {key:"engine", name:"ENGINE",   blurb:"Faster, stronger push", col:"#e8503a"},
+  {key:"handle", name:"HANDLING", blurb:"Tip quicker in the air", col:"#3a8ae8"},
+  {key:"fuel",   name:"FUEL TANK",blurb:"Ride longer per can",    col:"#5ac85a"},
+  {key:"hull",   name:"HULL",     blurb:"Rights itself, lands softer", col:"#e8a02a"},
+];
+const MAX_LV = 10;
+const upLevels = id => (state.up && state.up[id]) || [0, 0, 0, 0];
+// the first Jet Ski upgrade is 150 coins; pricier boats cost more to upgrade; each level costs about 45% more than the last
+const upCost = (c, i, lv) => { const base = Math.max(150, Math.round(c.price*.06/50)*50); const v = base*Math.pow(1.45, lv)*(1 + i*.05); return v < 1000 ? Math.round(v/10)*10 : Math.round(v/50)*50; };
+// a boat's numbers with its upgrades
+function boatStats(c, lv){
+  lv = lv || upLevels(c.id);
+  return {L:c.L, H:c.H, lift:c.lift,
+    thrust: c.thrust*(1 + .075*lv[0]), vmax: c.vmax*(1 + .05*lv[0]),
+    air: c.air*(1 + .09*lv[1]), grip: 1 + .06*lv[1],
+    tank: c.tank*(1 + .15*lv[2]),
+    stab: c.stab*(1 + .09*lv[3]), soft: 1 + .06*lv[3]};
+}
+// 0..1 numbers for the bars in the Garage
+function statBars(c, lv){ const s = boatStats(c, lv); return [Math.min(1, s.vmax/900), Math.min(1, s.air/16), Math.min(1, s.tank/140), Math.min(1, s.stab/4.6)]; }
+
+/* ---------- drawing ---------- (side view: nose points right; (0,0) is the middle of the hull at the waterline) */
+function drawRider(c, x, y, k, col, shades){
+  c.fillStyle = col; c.fillRect(x - 3*k, y - 11*k, 6*k, 9*k);                                   // body (life vest)
+  c.fillStyle = "#f0c8a0"; c.beginPath(); c.arc(x + .5*k, y - 15*k, 4*k, 0, Math.PI*2); c.fill();   // head
+  c.fillStyle = col; c.beginPath(); c.arc(x, y - 15.6*k, 4.3*k, Math.PI*1.02, Math.PI*1.98); c.fill();   // helmet
+  c.fillRect(x - 4.3*k, y - 16*k, 8.6*k, 1.6*k);
+  if (shades){ c.fillStyle = "#0a0a0e"; c.fillRect(x + 1*k, y - 16*k, 4.4*k, 1.8*k); }
+  else { c.fillStyle = "#1a2a3a"; c.fillRect(x + 2.6*k, y - 15.6*k, 1.4*k, 1.4*k); }
+}
+function hullPath(c, pts){ c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); }
+// opts: {sil, t, gas}
+function paintBoat(c, v, o){
+  o = o || {}; const sil = o.sil, M = sil ? "#0c1224" : v.main, A = sil ? "#0c1224" : v.accent, t = o.t || 0;
+  const S = (col, k) => sil ? "#0c1224" : shade(col, k), L = v.L, h = v.H;
+  c.lineJoin = "round";
+  const rider = (x, y, k, col, sh) => { if (!sil) drawRider(c, x, y, k, col, sh); else { c.fillStyle = M; c.fillRect(x - 3*k, y - 11*k, 6*k, 9*k); c.beginPath(); c.arc(x, y - 15*k, 4.4*k, 0, Math.PI*2); c.fill(); } };
+  switch (v.body){
+    case "jetski": case "racejet": {
+      const race = v.body === "racejet";
+      hullPath(c, [[-L/2, -h*.9], [L*.18, -h*.95], [L/2, -h*.35], [L*.42, h*.35], [-L*.3, h*.45], [-L/2, h*.1]]); c.fillStyle = M; c.fill();
+      c.fillStyle = S(v.main, -.35); hullPath(c, [[L/2, -h*.35], [L*.42, h*.35], [-L*.3, h*.45], [-L/2, h*.1], [-L/2, -h*.05], [L*.46, -h*.1]]); c.fill();
+      c.fillStyle = A; c.fillRect(-L*.45, -h*.4, L*.85, h*.22);
+      if (race){ c.fillStyle = S(v.accent, -.2); for (let i = 0; i < 3; i++) c.fillRect(-L*.35 + i*L*.12, -h*.85, L*.06, h*.4); }
+      c.fillStyle = "#1c1c22"; c.fillRect(-L*.38, -h*1.15, L*.36, h*.3);                       // seat
+      c.fillStyle = "#3a3e48"; c.fillRect(L*.08, -h*1.9, 2, h); c.fillRect(L*.02, -h*1.95, L*.16, 2);   // handlebar
+      rider(-L*.12, -h*1.1, 1, race ? "#ffd34d" : "#ff8a2a"); break; }
+    case "bass": {
+      hullPath(c, [[-L/2, -h*.8], [L*.42, -h*.8], [L/2, -h*.55], [L*.4, h*.45], [-L/2, h*.45]]); c.fillStyle = M; c.fill();
+      c.fillStyle = S(v.main, -.4); c.fillRect(-L/2, h*.05, L*.92, h*.4);
+      c.fillStyle = A; c.fillRect(-L/2, -h*.85, L*.95, h*.2);
+      c.fillStyle = "#3a3e48"; c.fillRect(-L/2 - 6, -h*1.5, 7, h*1.2); c.fillStyle = "#1c1c22"; c.fillRect(-L/2 - 5, -h*.3, 4, h*1.1);   // outboard motor
+      c.fillStyle = "#6a4a2a"; c.fillRect(-L*.25, -h*1.2, L*.18, h*.4);
+      rider(-L*.16, -h*1.1, 1, "#ffcf2a"); break; }
+    case "speed": case "creator": {
+      const cr = v.body === "creator";
+      hullPath(c, [[-L/2, -h], [L*.15, -h], [L/2, -h*.4], [L*.38, h*.45], [-L/2, h*.45]]); c.fillStyle = M; c.fill();
+      c.fillStyle = A; c.fillRect(-L/2, -h*.25, L*.9, h*.22);                                    // stripe
+      c.fillStyle = cr ? "#ffd34d" : S(v.main, -.25); c.fillRect(-L/2, -h*1.05, L*.66, h*.14);   // trim
+      c.fillStyle = sil ? M : "rgba(150,210,255,.75)"; hullPath(c, [[L*.05, -h], [L*.18, -h*1.75], [L*.22, -h*1.75], [L*.2, -h]]); c.fill();   // windshield
+      c.fillStyle = "#3a3e48"; c.fillRect(-L/2 - 4, -h*.6, 5, h);
+      rider(-L*.05, -h*.95, 1.05, cr ? "#1c1c22" : "#2a6ad8", cr);
+      if (cr && !sil){ c.fillStyle = "#ffd34d"; c.beginPath(); c.moveTo(-L*.09, -h*.95 - 20); c.lineTo(-L*.06, -h*.95 - 25); c.lineTo(-L*.03, -h*.95 - 21); c.lineTo(0, -h*.95 - 25); c.lineTo(L*.03, -h*.95 - 20); c.closePath(); c.fill(); }   // crown
+      break; }
+    case "pontoon": {
+      c.fillStyle = S("#c8ccd8", -.15); c.beginPath(); c.roundRect(-L/2, -h*.1, L, h*.6, h*.3); c.fill();   // tube
+      c.fillStyle = M; c.fillRect(-L/2 + 2, -h*.65, L - 4, h*.55);
+      c.fillStyle = A; c.fillRect(-L/2 + 2, -h*.65, L - 4, h*.16);
+      c.fillStyle = S("#c8ccd8", 0); for (let i = 0; i < 7; i++) c.fillRect(-L/2 + 4 + i*(L - 10)/6, -h*1.5, 1.5, h*.85);   // rails
+      c.fillRect(-L/2 + 4, -h*1.55, L - 8, 1.6);
+      c.fillStyle = A; c.fillRect(-L*.3, -h*3.1, L*.6, 3); c.fillStyle = S(v.accent, -.3); c.fillRect(-L*.28, -h*3.1, 1.6, h*1.6); c.fillRect(L*.27, -h*3.1, 1.6, h*1.6);   // canopy
+      rider(L*.18, -h*.65, 1, "#e83a3a"); break; }
+    case "airboat": {
+      hullPath(c, [[-L/2, -h*.6], [L*.4, -h*.6], [L/2, -h*.3], [L*.45, h*.45], [-L/2, h*.45]]); c.fillStyle = M; c.fill();
+      c.fillStyle = S(v.main, -.35); c.fillRect(-L/2, h*.05, L*.95, h*.4);
+      c.fillStyle = "#3a3e48"; c.fillRect(-L*.08, -h*1.9, 3, h*1.4);                            // seat post
+      c.fillStyle = "#1c1c22"; c.fillRect(-L*.13, -h*2, L*.14, 3);
+      const fx = -L*.38, fy = -h*1.75, R = h*1.25;                                             // the big fan in its cage
+      c.strokeStyle = sil ? M : "#3a3e48"; c.lineWidth = 2.4; c.beginPath(); c.arc(fx, fy, R, 0, Math.PI*2); c.stroke(); c.lineWidth = 1; c.beginPath(); c.moveTo(fx - R, fy); c.lineTo(fx + R, fy); c.stroke();
+      c.fillStyle = sil ? M : "rgba(60,64,72,.85)"; const sp = Math.cos(t*40)*R; c.fillRect(fx - 1.5, fy - Math.abs(sp), 3, Math.abs(sp)*2);
+      c.fillStyle = "#3a3e48"; c.fillRect(fx - 1, fy, 2, h*1.6);
+      rider(-L*.04, -h*1.95, 1, "#5a3a1a"); break; }
+    case "hydro": {
+      hullPath(c, [[-L/2, -h*.7], [L*.3, -h*.5], [L/2, -h*.1], [L*.35, h*.4], [-L/2, h*.4]]); c.fillStyle = M; c.fill();
+      c.fillStyle = A; c.fillRect(-L/2, -h*.1, L*.9, h*.2); c.fillRect(-L/2, -h*2.4, 4, h*1.8); c.fillRect(-L/2, -h*2.4, L*.14, 3);   // tail fin
+      c.fillStyle = sil ? M : "rgba(150,210,255,.8)"; c.beginPath(); c.ellipse(-L*.02, -h*.75, L*.13, h*.65, 0, Math.PI, 0); c.fill();   // canopy
+      if (!sil){ c.fillStyle = "#1c1c22"; c.beginPath(); c.arc(-L*.02, -h*.95, 3.4, 0, Math.PI*2); c.fill(); }
+      break; }
+    case "hover": {
+      c.fillStyle = sil ? M : "#1c1c22"; c.beginPath(); c.roundRect(-L/2, -h*.25, L, h*.85, h*.4); c.fill();   // rubber skirt
+      c.fillStyle = M; c.fillRect(-L*.46, -h*.95, L*.9, h*.75);
+      c.fillStyle = A; c.fillRect(-L*.46, -h*.4, L*.9, h*.16);
+      c.fillStyle = sil ? M : "rgba(150,210,255,.8)"; c.fillRect(L*.05, -h*1.6, L*.3, h*.68);
+      c.fillStyle = S(v.main, -.2); c.fillRect(-L*.1, -h*1.65, L*.48, h*.12);
+      c.fillStyle = "#3a3e48"; c.beginPath(); c.arc(-L*.36, -h*1.6, h*.8, 0, Math.PI*2); c.fill();          // rear fan housing
+      if (!sil){ c.fillStyle = "#8a8e98"; const sp = Math.cos(t*40)*h*.7; c.fillRect(-L*.36 - 1, -h*1.6 - Math.abs(sp), 2, Math.abs(sp)*2); }
+      if (!sil){ c.fillStyle = "#1c1c22"; c.beginPath(); c.arc(L*.2, -h*1.25, 3, 0, Math.PI*2); c.fill(); }
+      break; }
+    case "yacht": {
+      hullPath(c, [[-L/2, -h*.6], [L*.38, -h*.75], [L/2, -h*.95], [L*.38, h*.45], [-L*.46, h*.45]]); c.fillStyle = S(v.accent, 0); c.fill();   // dark hull
+      c.fillStyle = M; c.fillRect(-L*.42, -h*1.4, L*.7, h*.8); c.fillRect(-L*.3, -h*2.05, L*.45, h*.7); c.fillRect(-L*.18, -h*2.55, L*.22, h*.55);
+      c.fillStyle = sil ? M : "#1a2a4a"; for (let i = 0; i < 6; i++) c.fillRect(-L*.38 + i*L*.1, -h*1.15, L*.06, h*.28);
+      for (let i = 0; i < 4; i++) c.fillRect(-L*.26 + i*L*.1, -h*1.8, L*.06, h*.25);
+      c.fillStyle = S("#c8ccd8", 0); c.fillRect(-L*.05, -h*3.4, 1.5, h*.9);
+      c.fillStyle = M; c.fillRect(-L*.46, -h*.7, L*.92, h*.12);
+      if (!sil){ c.fillStyle = "#2a6ad8"; c.fillRect(-L*.48, -h*.08, L*.86, h*.14); }
+      rider(-L*.08, -h*2.05, .9, "#ffffff"); break; }
+  }
+}
+// where the rider's head is (for wipeouts), in the boat's own coordinates
+function headPoint(v){
+  const h = v.H, L = v.L;
+  switch (v.body){
+    case "jetski": case "racejet": return [-L*.12, -h*1.1 - 15];
+    case "bass": return [-L*.16, -h*1.1 - 15];
+    case "speed": case "creator": return [-L*.05, -h*.95 - 16];
+    case "pontoon": return [L*.18, -h*.65 - 15];
+    case "airboat": return [-L*.04, -h*1.95 - 15];
+    case "hydro": return [-L*.02, -h*.95];
+    case "hover": return [L*.2, -h*1.25];
+    case "yacht": return [-L*.08, -h*2.05 - 13];
+  }
+  return [0, -h - 14];
+}
+// used by the old page code (cards, the "now riding" box): draws the boat sitting on a little bit of water
+function drawChar(c, v, o){
+  const k = (o.s || 4)/4*1.3, x = o.x, y = o.y - 14*k;
+  c.save(); c.translate(x, y); c.scale(k, k); paintBoat(c, v, {sil:o.sil, t:o.t}); c.restore();
+}
+
+/* ============================== STATE & SAVES ============================== */
+const newState = () => ({v:1, name:"", coins:0, lifetimeCoins:0, best:0, bestRound:0, runs:0, chests:0, owned:{"0":1}, selected:0, up:{}, updatedAt:0});
+function cleanName(n){ return typeof n === "string" ? n.replace(/[^A-Za-z0-9 _.\-']/g,"").replace(/\s+/g," ").trim().slice(0,16) : ""; }
+function sanitize(s){
+  const d = newState(); if (!s || typeof s !== "object") return d;
+  const num = (v, def) => (Number.isFinite(+v) && +v >= 0) ? Math.floor(+v) : def;
+  d.coins = num(s.coins,0); d.lifetimeCoins = num(s.lifetimeCoins,d.coins); d.best = num(s.best,0); d.bestRound = num(s.bestRound,0);
+  d.name = cleanName(s.name);
+  d.runs = num(s.runs,0); d.chests = num(s.chests,0); d.updatedAt = num(s.updatedAt,0);
+  d.owned = {};
+  if (s.owned && typeof s.owned === "object") for (const k in s.owned){ const i = +k; if (Number.isInteger(i) && i>=0 && i<CHARS.length && num(s.owned[k],0)>0) d.owned[i] = num(s.owned[k],1); }
+  if (!Object.keys(d.owned).length) d.owned = {"0":1};
+  d.selected = d.owned[s.selected] ? +s.selected : +Object.keys(d.owned)[0];
+  d.up = {};       // upgrade levels per boat: [engine, handling, fuel, hull]
+  if (s.up && typeof s.up === "object") for (const k in s.up){ const i = +k, a = s.up[k]; if (d.owned[i] && Array.isArray(a)) d.up[i] = [0, 1, 2, 3].map(j => Math.min(10, num(a[j], 0))); }
+  return d;
+}
+let state = newState();
+
+const LS = {
+  get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); return true; } catch { return false; } },
+  del(k){ try { localStorage.removeItem(k); } catch {} },
+};
+const PREFIX = "swellsurfer:";
+const Saves = {
+  mode: "local",       // "local" | "fire"
+  db: null, uid: null, profile: "Player 1",
+  writing: false, dirty: false, timer: null, lastError: null,
+  profiles(){ try { const p = JSON.parse(LS.get(PREFIX+"profiles")||"null"); if (Array.isArray(p) && p.length) return p.filter(x=>typeof x==="string"); } catch {} return ["Player 1"]; },
+  setProfiles(list){ LS.set(PREFIX+"profiles", JSON.stringify(list)); },
+  loadLocal(name){ try { return sanitize(JSON.parse(LS.get(PREFIX+"save:"+name)||"null")); } catch { return newState(); } },
+  saveLocal(){ return LS.set(PREFIX+"save:"+this.profile, JSON.stringify(state)); },
+  
+  save(now){
+    state.updatedAt = Date.now();
+    const okLocal = this.mode === "local" ? this.saveLocal() : true;
+    if (this.mode === "local"){ setSaveStatus(okLocal ? "local" : "err"); renderCode(); return; }
+    this.dirty = true;
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.flush(), now ? 0 : 700);
+  },
+  async flush(){
+    if (this.writing || !this.dirty || this.mode !== "fire") return;
+    this.writing = true; this.dirty = false; setSaveStatus("saving");
+    const uid = this.uid;
+    try { await this.fs.collection("marina").doc(uid).set(JSON.parse(JSON.stringify(state))); if (this.uid === uid) setSaveStatus("ok"); }
+    catch (e) {
+      if (e && (e.code === "unavailable" || e.code === "deadline-exceeded")){ this.dirty = true; setTimeout(()=>this.flush(), 1500 + Math.random()*1000); setSaveStatus("saving"); }
+      else { this.mode = "local"; this.saveLocal(); setSaveStatus("fallback"); renderAccount(); }
+    }
+    this.writing = false;
+    if (this.dirty) this.flush();
+    renderCode();
+  },
+};
+
+function encodeSave(s){ const j = JSON.stringify({name:s.name,coins:s.coins,lifetimeCoins:s.lifetimeCoins,best:s.best,bestRound:s.bestRound,runs:s.runs,chests:s.chests,owned:s.owned,selected:s.selected,up:s.up});
+  return "SS1-" + btoa(unescape(encodeURIComponent(j))); }
+function decodeSave(code){
+  code = (code||"").trim().replace(/\s+/g,"");
+  if (!code.startsWith("SS1-")) throw new Error("That doesn't look like a Swell Surfer save code. Codes start with SS1-.");
+  let obj; try { obj = JSON.parse(decodeURIComponent(escape(atob(code.slice(4))))); } catch { throw new Error("The code is incomplete or was changed. Copy the whole code and try again."); }
+  return sanitize(obj);
+}
+
+/* ============================== UI HELPERS ============================== */
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString("en-US");
+let toastT;
+function toast(msg){ const el=$("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2200); }
+function setupCanvas(cv){ const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false; return ctx; }
+function ownedCount(){ return Object.keys(state.owned).length; }
+function tierFound(i){ return CHARS.filter(c=>c.tier===i && state.owned[c.id]).length; }
+function pct(w){ return (w % 1 ? w.toFixed(1) : w) + "%"; }
+
+function setSaveStatus(kind){
+  const dot=$("saveDot"), txt=$("saveText");
+  dot.className = "dot";
+  if (kind === "ok"){ dot.classList.add("ok"); txt.textContent = "Saved to your account"; }
+  else if (kind === "saving"){ dot.classList.add("ok"); txt.textContent = "Saving to your account…"; }
+  else if (kind === "local"){ dot.classList.add("local"); txt.textContent = "Saved on this device as " + Saves.profile; }
+  else if (kind === "fallback"){ dot.classList.add("local"); txt.textContent = "Couldn't save to your account, so progress saves on this device as " + Saves.profile; }
+  else if (kind === "nosetup"){ dot.classList.add("local"); txt.textContent = "Accounts aren't set up on this site yet. Progress saves on this device as " + Saves.profile; }
+  else if (kind === "err"){ dot.classList.add("err"); txt.textContent = "This browser is blocking saves. Use your save code to keep progress."; }
+}
+
+function renderHUD(){
+  $("hudCoins").textContent = fmt(state.coins);
+  $("hudOwned").textContent = ownedCount();
+  $("hudTotal").textContent = "/ " + CHARS.length + " found";
+  $("hudBest").textContent = fmt(state.best) + " m";
+  $("recBest").textContent = fmt(state.best) + " m";
+  $("recRound").textContent = state.bestRound ? "Round " + state.bestRound : "—";
+  $("recRuns").textContent = fmt(state.runs);
+  $("recLife").textContent = fmt(state.lifetimeCoins);
+  $("recChests").textContent = fmt(state.chests);
+  const c = curCar();
+  $("nowName").textContent = c.name; $("nowName").classList.toggle("creator", isCreator(c));
+  $("nowName").style.color = TIERS[c.tier].color;
+  $("nowPerk").textContent = TIERS[c.tier].name + (themeFor(c) ? " · " + themeFor(c).world : "");
+  $("chestBar").style.width = Math.min(100, state.coins) + "%";
+  const can = state.coins >= 100 && !chestBusy;
+  $("openChest").disabled = !can;
+  $("chestHint").textContent = state.coins >= 100 ? (Math.floor(state.coins/100) + " chest" + (state.coins>=200?"s":"") + " ready") : (100 - state.coins) + " more treats to go";
+}
+function renderOdds(){
+  $("oddsBody").innerHTML = TIERS.map((t,i)=>`<tr><td style="color:${t.color}">${t.name}</td><td>${tierCounts[i]}</td><td>${pct(t.weight)}</td><td>+${t.refund}</td><td>${tierFound(i)} / ${tierCounts[i]}</td></tr>`).join("");
+}
+let filter = -1;
+function renderFilters(){
+  const opts = [{i:-1,name:"All"}].concat(TIERS.map((t,i)=>({i,name:t.name})));
+  $("filters").innerHTML = opts.map(o=>`<button type="button" data-f="${o.i}" aria-pressed="${filter===o.i}" ${o.i>=0?`style="color:${TIERS[o.i].color}"`:""}>${o.name}${o.i>=0?` ${tierFound(o.i)}/${tierCounts[o.i]}`:` ${ownedCount()}/${CHARS.length}`}</button>`).join("");
+}
+const cardCanvases = [];
+function renderCards(){
+  const box = $("cards"); box.textContent = "";
+  cardCanvases.length = 0;
+  SORTED.forEach(c => {
+    if (filter >= 0 && c.tier !== filter) return;
+    const own = TEST.on || !!state.owned[c.id], t = TIERS[c.tier];
+    const b = document.createElement("button"); b.type = "button";
+    b.className = "card" + (own ? "" : " locked") + ((TEST.on ? TEST.car : state.selected) === c.id ? " sel" : "");
+    b.style.setProperty("--rc", t.color);
+    b.setAttribute("aria-label", own ? `${c.name}, ${t.name}${state.selected===c.id?", running now":""}` : `Locked ${t.name} dog`);
+    const cv = document.createElement("canvas"); cv.width = 168; cv.height = 96;
+    const num = document.createElement("span"); num.className = "num"; num.textContent = carNo(c);
+    const nm = document.createElement("span"); nm.className = "cn"; nm.textContent = own ? c.name : "???"; if (own && isCreator(c)) nm.classList.add("creator");
+    const rr = document.createElement("span"); rr.className = "cr"; rr.textContent = t.name;
+    b.append(num, cv, nm, rr);
+    if (own && state.owned[c.id] > 1){ const n = document.createElement("span"); n.className="cnt"; n.textContent = "×" + state.owned[c.id]; b.append(n); }
+    if (own) b.addEventListener("click", () => selectChar(c.id));
+    box.append(b);
+    const ctx = setupCanvas(cv);
+    drawChar(ctx, c, {x:84, y:84, s:4.4, t:0, sil:!own});
+    if (c.tier >= 4 && own) cardCanvases.push({ctx, c});
+  });
+}
+function renderNow(){ const cv=$("nowCv"), ctx=setupCanvas(cv); ctx.clearRect(0,0,112,64); drawChar(ctx, curCar(), {x:56,y:56,s:2.9,t:performance.now()/1000}); }
+function renderAll(){ renderHUD(); renderOdds(); renderFilters(); renderCards(); renderNow(); renderAccount(); renderCode(); }
+
+/* ---------- Test Run mode (secret) ----------
+   Tap the "Swell Surfer" title 7 times fast, or type "testride" on a keyboard.
+   Lets you run with any dog. Nothing in test mode touches real progress: no treats, no chests,
+   no best score, no leaderboard. It switches off when the page reloads. */
+const TEST = { on:false, car:0 };
+const curCar = () => TEST.on ? CHARS[TEST.car] : CHARS[state.selected];
+function setTest(on){
+  if (game.state === "running") endRun();
+  TEST.on = on; TEST.car = state.selected;
+  $("testBar").hidden = !on;
+  document.body.classList.toggle("testing", on);
+  renderAll(); toast(on ? "Test ride mode on: every boat unlocked" : "Test ride mode off");
+}
+{ let taps = [];
+  $("brandTitle").addEventListener("click", () => { const now = Date.now(); taps = taps.filter(t => now - t < 2500); taps.push(now); if (taps.length >= 7){ taps = []; setTest(!TEST.on); } });
+  let typed = "";
+  document.addEventListener("keydown", e => { if (e.key.length !== 1 || /INPUT|TEXTAREA/.test(e.target.tagName)) return; typed = (typed + e.key.toLowerCase()).slice(-8);
+    if (typed.endsWith("testride")){ typed = ""; setTest(!TEST.on); }
+    else if (TEST.on && typed.endsWith("seamonster")){ typed = ""; TEST.monster = true; if (game.state === "running") game.monsterAt = game.b.x + 300; toast("Something big is under the water…"); } });
+}
+function selectChar(id){
+  if (TEST.on){ TEST.car = id; renderHUD(); renderCards(); renderNow(); toast("Test riding the " + CHARS[id].name); return; }
+  if (!state.owned[id] || state.selected === id) return;
+  state.selected = id; Saves.save(); renderHUD(); renderCards(); renderNow();
+  toast("Now riding the " + CHARS[id].name); if (game.state === "ready"){ game.b = newBoat(60); }
+}
+$("filters").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; filter = +b.dataset.f; renderFilters(); renderCards(); });
+
+/* ---------- account box ---------- */
+function renderAccount(){
+  const cloud = Saves.mode === "fire";
+  $("whoBox").hidden = !cloud;
+  $("authBox").hidden = cloud || !Saves.auth;
+  $("acct").classList.toggle("signed", cloud);
+  if (cloud) $("overCta").hidden = true;
+
+  if (!cloud){
+    const sel = $("profileSel"); sel.textContent = "";
+    Saves.profiles().forEach(p => { const o=document.createElement("option"); o.value=p; o.textContent=p; if (p===Saves.profile) o.selected=true; sel.append(o); });
+    $("delProfile").disabled = Saves.profiles().length < 2;
+  }
+}
+$("profileSel").addEventListener("change", e => switchProfile(e.target.value));
+function switchProfile(name){
+  if (game.state === "running") endRun();
+  Saves.profile = name; LS.set(PREFIX+"current", name);
+  state = Saves.loadLocal(name); renderAll(); setSaveStatus("local"); toast("Playing as " + name);
+}
+$("addProfile").addEventListener("click", () => {
+  const name = $("newProfile").value.trim().replace(/\s+/g," ");
+  const list = Saves.profiles();
+  if (!name){ $("acctMsg").textContent = "Type a name for the new player first."; return; }
+  if (list.some(p=>p.toLowerCase()===name.toLowerCase())){ $("acctMsg").textContent = name + " already exists. Pick it from the list."; return; }
+  list.push(name); Saves.setProfiles(list); $("newProfile").value = ""; $("acctMsg").textContent = "";
+  Saves.saveLocal(); switchProfile(name); Saves.saveLocal();
+});
+$("newProfile").addEventListener("keydown", e => { if (e.key === "Enter") $("addProfile").click(); });
+$("delProfile").addEventListener("click", () => { $("delText").textContent = `Delete ${Saves.profile} and all their progress?`; $("delConfirm").hidden = false; });
+$("delNo").addEventListener("click", () => $("delConfirm").hidden = true);
+$("delYes").addEventListener("click", () => {
+  const list = Saves.profiles().filter(p => p !== Saves.profile);
+  LS.del(PREFIX+"save:"+Saves.profile); Saves.setProfiles(list); $("delConfirm").hidden = true;
+  switchProfile(list[0]);
+});
+
+/* ---------- save code ---------- */
+function renderCode(){ if (document.activeElement !== $("codeBox")) $("codeBox").value = encodeSave(state); }
+$("copyCode").addEventListener("click", () => {
+  const box = $("codeBox"); box.value = encodeSave(state);
+  const fallback = () => { box.focus(); box.select(); $("codeMsg").textContent = "Code selected. Press Ctrl+C (or ⌘C) to copy it."; };
+  try { navigator.clipboard.writeText(box.value).then(() => { $("codeMsg").textContent = "Copied. Keep it somewhere safe."; }, fallback); } catch { fallback(); }
+});
+let pendingImport = null;
+$("loadCode").addEventListener("click", () => {
+  try { pendingImport = decodeSave($("codeBox").value); $("loadConfirm").hidden = false; $("codeMsg").textContent = `Code holds ${fmt(pendingImport.coins)} treats and ${Object.keys(pendingImport.owned).length} dogs.`; }
+  catch (e) { $("codeMsg").textContent = e.message; }
+});
+$("loadNo").addEventListener("click", () => { pendingImport = null; $("loadConfirm").hidden = true; $("codeMsg").textContent = ""; renderCode(); });
+$("loadYes").addEventListener("click", () => {
+  if (!pendingImport) return;
+  if (game.state === "running") endRun();
+  state = pendingImport; pendingImport = null; $("loadConfirm").hidden = true; $("codeMsg").textContent = "Progress loaded.";
+  Saves.save(true); renderAll();
+});
+
+/* ============================== SOUND & MUSIC ==============================
+   Everything is synthesized with the Web Audio API: no audio files, nothing to license.
+   Browsers only allow sound after the player taps or presses a key, so the engine wakes up on the first input. */
+const Sound = (() => {
+  let ac = null, master, sfxBus, noiseBuf;
+  const prefs = { sfx: LS.get(PREFIX + "sfx") !== "off" };
+  const SFX_VOL = .55;
+  function wake(){
+    if (!ac){
+      const C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
+      try { ac = new C(); } catch { return null; }
+      master = ac.createGain(); master.gain.value = .9; master.connect(ac.destination);
+      sfxBus = ac.createGain(); sfxBus.gain.value = prefs.sfx ? SFX_VOL : 0; sfxBus.connect(master);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1;
+    }
+    if (ac.state === "suspended") ac.resume().catch(() => {});
+    return ac;
+  }
+  function tone(f, dur, {type="square", vol=.3, at=0, slide=0, bus, attack=.005, cutoff=0}={}){
+    if (!ac) return; const t = ac.currentTime + at;
+    const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(.0008, t + dur);
+    let node = o;
+    if (cutoff){ const f2 = ac.createBiquadFilter(); f2.type = "lowpass"; f2.frequency.value = cutoff; o.connect(f2); node = f2; }
+    node.connect(g); g.connect(bus || sfxBus); o.start(t); o.stop(t + dur + .02);
+    return g;
+  }
+  function noise(dur, {vol=.3, at=0, hp=0, lp=0, bus}={}){
+    if (!ac) return; const t = ac.currentTime + at;
+    const s = ac.createBufferSource(); s.buffer = noiseBuf; let node = s;
+    if (hp){ const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = hp; node.connect(f); node = f; }
+    if (lp){ const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = lp; node.connect(f); node = f; }
+    const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0008, t + dur);
+    node.connect(g); g.connect(bus || sfxBus); s.start(t); s.stop(t + dur + .02);
+  }
+  const ok = () => ac && prefs.sfx;
+  const LT = {}; const lim = (k, s) => { const n = ac.currentTime; if (LT[k] && n - LT[k] < s) return false; LT[k] = n; return true; };
+  const fx = {
+    // starting the engine: a short rising motor rev
+    start(){ if (!ok()) return; tone(70, .55, {type:"sawtooth", vol:.09, slide:160, cutoff:700, attack:.04}); tone(140, .4, {type:"square", vol:.03, at:.1, slide:260, cutoff:900}); },
+    // a button press: a soft pop
+    click(){ if (!ok()) return; tone(520, .05, {type:"sine", vol:.1, slide:780}); },
+    // a coin: a little sparkle
+    coin(){ if (!ok() || !lim("coin", .03)) return; tone(1320 + Math.random()*80, .06, {type:"triangle", vol:.07}); tone(1980, .08, {type:"sine", vol:.05, at:.04}); },
+    // a fuel can: a glug and a ding
+    fuel(){ if (!ok()) return; [0, .07, .14].forEach(d => tone(180 + d*900, .06, {type:"sine", vol:.12, at:d})); tone(1046, .25, {type:"triangle", vol:.08, at:.2}); },
+    // landing in the water: a splash (bigger drops make a bigger splash)
+    splash(k){ if (!ok() || !lim("splash", .15)) return; k = Math.max(.2, Math.min(1, k || .5)); noise(.25 + k*.35, {vol:.12 + k*.22, lp:900 + k*1600}); tone(110, .2, {type:"sine", vol:.1*k, slide:60}); },
+    // a flip or big air: a bright two-note chime
+    stunt(){ if (!ok()) return; tone(784, .12, {type:"triangle", vol:.08}); tone(1175, .2, {type:"triangle", vol:.08, at:.1}); },
+    // a new part of the sea: a rising chime
+    zone(){ if (!ok()) return; [523, 659, 784, 1047].forEach((f, i) => tone(f, .26, {type:"triangle", vol:.08, at:i*.08})); },
+    // out of fuel: the engine sputters out
+    empty(){ if (!ok()) return; [0, .18, .4].forEach((d, i) => tone(90 - i*15, .12, {type:"sawtooth", vol:.08, at:d, cutoff:500})); },
+    // wiping out: a crash into the water
+    crash(){ if (!ok()) return; noise(.9, {vol:.4, lp:1200}); tone(90, .5, {type:"sine", vol:.4, slide:35}); },
+    // buying or upgrading: a happy cash-register ding
+    buy(){ if (!ok()) return; tone(1568, .08, {type:"square", vol:.05, cutoff:4000}); tone(2093, .3, {type:"triangle", vol:.08, at:.07}); },
+    // the sea serpent: a deep rumble and a roar
+    monster(){ if (!ok()) return; tone(48, 2.6, {type:"sawtooth", vol:.16, slide:30, cutoff:240, attack:.4}); noise(2.2, {vol:.2, lp:320}); tone(140, 1.2, {type:"sawtooth", vol:.07, at:1.1, slide:70, cutoff:600}); },
+    // chest suspense: rattles speed up; rarer pulls add a riser, a heartbeat and a drumroll
+    shake(dur, tier){ if (!ok()) return;
+      let t = 0, gap = .16; while (t < dur - .05){ noise(.05, {vol:.2 + tier*.02, at:t, hp:1800}); tone(170 + Math.random()*40, .05, {type:"square", vol:.05, at:t + .02, cutoff:800}); t += gap; gap = Math.max(.05, gap * (tier >= 3 ? .9 : .97)); }
+      if (tier >= 3){ const s2 = ac.createBufferSource(); s2.buffer = noiseBuf; s2.loop = true; const f = ac.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 4; const g = ac.createGain(), t0 = ac.currentTime;
+        f.frequency.setValueAtTime(300, t0); f.frequency.exponentialRampToValueAtTime(7000, t0 + dur); g.gain.setValueAtTime(.001, t0); g.gain.exponentialRampToValueAtTime(.2, t0 + dur); s2.connect(f); f.connect(g); g.connect(sfxBus); s2.start(t0); s2.stop(t0 + dur); }
+      if (tier >= 4) for (let k = 0; k < dur/.6; k++){ tone(70, .2, {type:"sine", vol:.5, at:k*.6, slide:45}); tone(70, .18, {type:"sine", vol:.35, at:k*.6 + .2, slide:45}); }
+      if (tier >= 5) for (let k = 0; k < 28; k++) noise(.05, {vol:.08 + k*.006, at: dur - 1.1 + k*.04, hp:1500});
+    },
+    reveal(tier){ if (!ok()) return;
+      const T = (f, d, o) => tone(f, d, o);
+      if (tier === 0){ T(784, .25, {type:"triangle", vol:.14}); T(1047, .35, {type:"triangle", vol:.12, at:.09}); return; }
+      if (tier === 1){ [659,784,1047].forEach((f,i) => T(f, .4, {type:"triangle", vol:.13, at:i*.08})); noise(.2, {vol:.08, hp:6000}); return; }
+      if (tier === 2){ [523,659,784,1047,1319].forEach((f,i) => T(f, .45, {type:"square", vol:.08, at:i*.07, cutoff:3200})); for (let i = 0; i < 6; i++) T(2000 + i*250, .12, {type:"sine", vol:.05, at:.35 + i*.05}); noise(.3, {vol:.12, hp:5000}); return; }
+      noise(1.2, {vol:.22 + tier*.04, hp:4500});                         // cymbal crash
+      if (tier >= 4){ T(55, 1.4, {type:"sine", vol:.7, slide:30}); noise(.25, {vol:.4, lp:900}); }
+      const chordA = tier === 3 ? [523,659,784] : [392,523,659,784], chordB = tier === 3 ? [587,740,880,1175] : [523,659,784,1047,1319];
+      chordA.forEach(f => [-10,10].forEach(d => T(f * (1 + d/1200), .5, {type:"sawtooth", vol:.06, cutoff:2400})));
+      chordB.forEach(f => [-10,10].forEach(d => T(f * (1 + d/1200), tier >= 4 ? 1.6 : 1.0, {type:"sawtooth", vol:.06, at:.42, cutoff:3200 + tier*400, attack:.03})));
+      if (tier >= 4) [0,.14,.28,.42].forEach((d,i) => T(i < 3 ? 98 : 131, .35, {type:"sine", vol:.45, at:d, slide:60}));   // timpani
+      const sp = tier === 3 ? 8 : (tier === 4 ? 16 : 30);
+      for (let i = 0; i < sp; i++) T(1600 + Math.random()*2400, .14, {type:"sine", vol:.05, at:.5 + i*.06});
+      if (tier >= 5){ [1047,1319,1568,2093].forEach((f,i) => T(f, 1.8, {type:"triangle", vol:.07, at:1.0 + i*.12})); T(41, 2, {type:"sine", vol:.6, at:.0, slide:28}); }
+    },
+    click(){ if (!ok()) return; tone(660, .05, {type:"square", vol:.07}); },
+  };
+
+  function setSfx(on){ prefs.sfx = on; LS.set(PREFIX + "sfx", on ? "on" : "off"); if (ac) sfxBus.gain.value = on ? SFX_VOL : 0; renderSoundButtons(); }
+  document.addEventListener("visibilitychange", () => { if (!ac) return; if (document.hidden) ac.suspend().catch(()=>{}); else ac.resume().catch(()=>{}); });
+  // first touch or key anywhere unlocks audio (iPhone needs this)
+  const unlock = () => wake();
+  ["pointerdown","touchend","keydown"].forEach(ev => document.addEventListener(ev, unlock, {passive:true}));
+  const noop = () => {};
+  return Object.assign(fx, { prefs, wake, setSfx, musicStart: noop, musicStop: noop, duck: noop, setRound: noop });
+})();
+function renderSoundButtons(){
+  document.querySelectorAll("[data-snd]").forEach(b => {
+    const kind = b.dataset.snd, on = Sound.prefs[kind];
+    b.setAttribute("aria-pressed", on);
+    b.textContent = "Sound" + (on ? ": On" : ": Off");
+  });
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-snd]"); if (!b) return;
+  e.stopPropagation();
+  Sound.setSfx(!Sound.prefs.sfx);
+  if (Sound.prefs.sfx) Sound.click();
+  b.blur();
+});
+/* ============================== TREASURE CHEST ============================== */
+let chestBusy = false, lastPull = null;
+const chestCtx = setupCanvas($("chestCv"));
+// a wooden toy chest with blue bands and a paw print, full of bones, balls and treats
+function drawChest(open, t, ctx = chestCtx){
+  ctx.clearRect(0,0,300,300);
+  ctx.save(); ctx.translate(150,172); ctx.scale(6,6);
+  const P=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h)};
+  const WOOD = "#9a5a2a", WOOD2 = "#b8723a", SEAM = "#6a3a16", BAND = "#2f5bd1", BAND2 = "#5a86ff", RIV = "#e8ecf8", PAW = "#fff4e4";
+  P(-12,8,24,2,"rgba(0,0,0,.4)");
+  P(-11,-2,22,10,WOOD); for (let i = 0; i < 3; i++) P(-11, i*3, 22, 1, SEAM); P(-11,-2,22,1,WOOD2);
+  P(-11,-2,2,10,BAND); P(9,-2,2,10,BAND); P(-11,7,22,1,BAND); P(-11,-2,2,1,BAND2); P(9,-2,2,1,BAND2);
+  [-10,10].forEach(x => [-1,3,6].forEach(y => P(x - (x > 0 ? 1 : 0), y, 1, 1, RIV)));
+  // bone-shaped latch
+  const bone = (x, y, c) => { P(x, y, 4, 1, c); P(x - 1, y - 1, 1, 1, c); P(x - 1, y + 1, 1, 1, c); P(x + 4, y - 1, 1, 1, c); P(x + 4, y + 1, 1, 1, c); };
+  if (!open){
+    P(-11,-8,22,6,WOOD); P(-10,-10,20,2,WOOD); P(-8,-11,16,1,WOOD); P(-11,-8,22,1,WOOD2); P(-10,-10,20,1,WOOD2);
+    P(-11,-8,2,6,BAND); P(9,-8,2,6,BAND); P(-10,-10,2,2,BAND); P(8,-10,2,2,BAND); P(-11,-3,22,1,BAND);
+    [-10,9].forEach(x => P(x,-7,1,1,RIV));
+    // paw print on the lid
+    P(-2,-7,4,3,PAW); P(-1,-8,2,1,PAW); P(-4,-9,2,2,PAW); P(2,-9,2,2,PAW); P(-2,-10,1,1,PAW); P(1,-10,1,1,PAW); P(-2,-11,1,1,PAW); P(1,-11,1,1,PAW);
+    P(-3,-2,6,3,"#ffd34d"); bone(-2,-1,"#fff8e0");
+  } else {
+    P(-11,-16,22,5,WOOD); P(-11,-16,22,1,WOOD2); P(-11,-16,2,5,BAND); P(9,-16,2,5,BAND);
+    P(-10,-5,20,4,"#d89a52"); P(-9,-7,18,2,"#e8b066"); P(-7,-8,14,1,"#e8b066");
+    bone(-8,-8,"#fff8e0"); bone(3,-9,"#fff8e0"); bone(-3,-6,"#fff8e0");
+    P(5,-6,3,3,"#d8ff2a"); P(5,-6,3,1,"#f6ffb0"); P(-7,-6,2,2,"#ff4f9a"); P(-1,-10,3,3,"#e0263a"); P(0,-10,1,1,"#ffb0a0");
+    [[-6,-4],[0,-5],[7,-4],[-9,-4]].forEach(([x,y]) => P(x,y,1,1,"#ffe0a8"));
+    P(-12,2,2,1,"#e0a85a"); P(11,4,2,1,"#e0a85a"); bone(11,6,"#fff8e0");
+  }
+  ctx.restore();
+  if (!open){ ctx.fillStyle = "rgba(255,224,138,"+(.25+.2*Math.sin(t*3))+")"; [[74,76],[228,98],[204,56]].forEach(([x,y],i)=>{const s=4+2*Math.sin(t*4+i);ctx.fillRect(x-s/2,y-s/2,s,s)}); }
+}
+function rollChar(){
+  let r = Math.random() * 100, tier = 0;
+  for (let i=0;i<TIERS.length;i++){ if (r < TIERS[i].weight){ tier=i; break; } r -= TIERS[i].weight; tier = i; }
+  const pool = CHARS.filter(c=>c.tier===tier);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+const cfChestCtx = setupCanvas($("cfChest")), cfCharCtx = setupCanvas($("cfChar"));
+let cfOpen = false, cfRevealed = false;
+// how dramatic each rarity's opening is
+const CHEST_FX = [
+  {dur:1.0, rayop:0,   rayspd:18, glow:0,  flash:0,   conf:0,   coins:0,  hints:[]},
+  {dur:1.2, rayop:.14, rayspd:20, glow:8,  flash:0,   conf:22,  coins:0,  hints:[]},
+  {dur:1.5, rayop:.2,  rayspd:15, glow:12, flash:.35, conf:50,  coins:0,  hints:[[.6,"Something's glowing…"]]},
+  {dur:1.9, rayop:.28, rayspd:10, glow:18, flash:.6,  conf:100, coins:0,  hints:[[.4,"Something's glowing…"],[.75,"It's getting stronger!"]]},
+  {dur:2.4, rayop:.34, rayspd:7,  glow:26, flash:.85, conf:160, coins:40, hints:[[.3,"Something's glowing…"],[.6,"It's getting stronger!"],[.85,"Here it comes…"]]},
+  {dur:3.2, rayop:.42, rayspd:4,  glow:34, flash:1,   conf:260, coins:70, hints:[[.25,"Something's glowing…"],[.5,"The ground is shaking…"],[.75,"This is no ordinary chest…"],[.92,"!!!"]]},
+];
+const cfFx = $("cfFx"), cfFxCtx = cfFx.getContext("2d");
+let cfParts = [], cfTimers = [];
+function cfSize(){ const d = Math.min(devicePixelRatio || 1, 2); cfFx.width = innerWidth * d; cfFx.height = innerHeight * d; cfFxCtx.setTransform(d,0,0,d,0,0); }
+function cfBurst(tier){
+  const fx = CHEST_FX[tier], r = $("cfChest").getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height*.45;
+  const cols = [["#ffffff"],["#6fd36a","#c8f5c0","#ffffff"],["#4aa8ff","#bfe2ff","#ffffff"],["#b77bff","#ff8ad8","#ffffff"],["#ffb23f","#ffd34d","#fff3b0","#ffffff"],["#ff4f6b","#ffd34d","#5fe03a","#2de2e6","#b77bff","#ffffff"]][tier];
+  for (let i = 0; i < fx.conf; i++){ const a = Math.random()*Math.PI*2, sp = 200 + Math.random()*(300 + tier*120);
+    cfParts.push({k:"c", x:cx, y:cy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 200, r:Math.random()*6, vr:(Math.random()-.5)*12, w:5 + Math.random()*5, h:3 + Math.random()*4, col:cols[i % cols.length], life:2.4 + Math.random()*1.2}); }
+  for (let i = 0; i < fx.coins; i++) cfParts.push({k:"o", x:Math.random()*innerWidth, y:-20 - Math.random()*innerHeight*.8, vx:(Math.random()-.5)*40, vy:120 + Math.random()*160, r:0, vr:4 + Math.random()*6, life:5});
+}
+function cfDraw(dt){
+  const W = innerWidth, H = innerHeight; cfFxCtx.clearRect(0, 0, W, H);
+  cfParts.forEach(p => { p.life -= dt; p.vy += (p.k === "o" ? 160 : 520)*dt; p.vx *= .99; p.x += p.vx*dt; p.y += p.vy*dt; p.r += p.vr*dt;
+    cfFxCtx.save(); cfFxCtx.globalAlpha = Math.min(1, p.life); cfFxCtx.translate(p.x, p.y);
+    if (p.k === "o"){ cfFxCtx.rotate(p.r*.3); [["#6a3a12",1.6],["#e0a85a",0]].forEach(([col,g]) => { cfFxCtx.fillStyle = col; cfFxCtx.fillRect(-8-g, -2.5-g, 16+g*2, 5+g*2); [[-9,-3.5],[-9,3.5],[9,-3.5],[9,3.5]].forEach(([bx,by]) => { cfFxCtx.beginPath(); cfFxCtx.arc(bx, by, 4+g, 0, Math.PI*2); cfFxCtx.fill(); }); }); }
+    else { cfFxCtx.rotate(p.r); cfFxCtx.fillStyle = p.col; cfFxCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h * Math.abs(Math.cos(p.r*1.3)) + 1); }
+    cfFxCtx.restore(); });
+  cfParts = cfParts.filter(p => p.life > 0 && p.y < H + 40);
+}
+function openChest(){
+  if (TEST.on){ toast("Chests are paused in Test Run mode"); return; }
+  if (chestBusy || state.coins < 100) return;
+  Sound.wake();
+  chestBusy = true; state.coins -= 100; state.chests++;
+  const c = rollChar(), isNew = !state.owned[c.id], t = TIERS[c.tier];
+  state.owned[c.id] = (state.owned[c.id]||0) + 1;
+  if (!isNew) state.coins += t.refund;
+  Saves.save(true); renderHUD();
+  lastPull = c;
+  if (game.state === "running") game.paused = true;
+  const el = $("chestFull"), fx = CHEST_FX[c.tier];
+  cfTimers.forEach(clearTimeout); cfTimers = []; cfParts = []; cfSize();
+  el.hidden = false; el.classList.remove("revealed","glowing","quake","dim"); el.classList.add("shaking");
+  el.dataset.tier = c.tier;
+  el.style.setProperty("--cf", t.color); el.style.setProperty("--rayop", fx.rayop); el.style.setProperty("--rayspd", fx.rayspd + "s");
+  el.style.setProperty("--glowpx", fx.glow + "px"); el.style.setProperty("--flash", fx.flash); el.style.setProperty("--shk", ".16s");
+  $("cfHint").textContent = "Opening…";
+  Sound.shake(fx.dur, c.tier);
+  const later = (sec, f) => cfTimers.push(setTimeout(f, sec*1000));
+  fx.hints.forEach(([at, txt]) => later(fx.dur*at, () => { $("cfHint").textContent = txt; }));
+  if (fx.glow) later(fx.dur*(c.tier >= 3 ? .4 : .7), () => el.classList.add("glowing"));
+  if (c.tier >= 3) later(fx.dur*.6, () => el.style.setProperty("--shk", ".08s"));
+  if (c.tier >= 4) later(fx.dur*.85, () => el.style.setProperty("--shk", ".05s"));
+  if (c.tier >= 5) later(.3, () => el.classList.add("dim"));
+  cfOpen = true; cfRevealed = false; document.body.style.overflow = "hidden";
+  $("cfTier").textContent = ""; $("cfName").textContent = ""; $("cfNote").textContent = "";
+  later(fx.dur, () => {
+    $("cfTier").textContent = t.name; $("cfTier").style.color = t.color;
+    $("cfName").textContent = c.name; $("cfName").style.color = c.tier >= 3 ? t.color : "var(--ink)"; $("cfName").classList.toggle("creator", isCreator(c));
+    $("cfNote").textContent = (themeFor(c) ? `Unlocks the ${themeFor(c).world} world · ` : "") + (isNew ? `New dog! ${carNo(c)} of ${CHARS.length}` : `You already had this one · +${t.refund} treats back`);
+    el.classList.remove("shaking","dim"); el.classList.add("revealed"); cfRevealed = true; Sound.reveal(c.tier);
+    if (fx.flash){ const f = $("cfFlash"); f.classList.remove("go","go2"); void f.offsetWidth; f.classList.add(c.tier >= 5 ? "go2" : "go"); }
+    if (c.tier >= 4){ el.classList.remove("quake"); void el.offsetWidth; el.classList.add("quake"); }
+    if (c.tier >= 5) $("cfTier").textContent = "Mythic!";
+    cfBurst(c.tier);
+    $("cfRun").hidden = state.selected === c.id;
+    $("cfAgain").hidden = state.coins < 100;
+    $("cfAgain").textContent = "Open another · 100";
+    chestBusy = false;
+    renderAll();
+    setTimeout(() => ($("cfRun").hidden ? $("cfClose") : $("cfRun")).focus({preventScroll:true}), 400);
+  });
+}
+function closeChest(){
+  if (!cfOpen || chestBusy) return;
+  cfOpen = false; $("chestFull").hidden = true; $("chestFull").classList.remove("revealed","shaking","glowing","quake","dim"); cfParts = []; cfTimers.forEach(clearTimeout);
+  document.body.style.overflow = "";
+}
+$("openChest").addEventListener("click", openChest);
+$("testOff").addEventListener("click", () => setTest(false));
+$("cfClose").addEventListener("click", closeChest);
+$("cfAgain").addEventListener("click", () => { cfOpen = false; openChest(); });
+$("cfRun").addEventListener("click", () => { if (lastPull) selectChar(lastPull.id); closeChest(); });
+/* ============================== GAME ==============================
+   Ride over the waves as far as you can. Hold GAS to go, BRAKE to slow down or back up. In the air, GAS tips the
+   nose back and BRAKE tips it forward, so you can line up your landing. The further you go, the bigger the waves get.
+   A run ends when you wipe out (land upside down or dunk the rider), run out of fuel, or meet the sea serpent. */
+document.body.classList.add("app", "fs");             // one full-screen app: the game, its menus, and pop-ups
+const cv = $("game"); let ctx = setupCanvas(cv);
+const isPhone = () => matchMedia("(pointer:coarse)").matches && Math.min(innerWidth, innerHeight) < 700;
+const isFS = () => true;
+const PXM = 10;                                // world pixels per meter
+const G = 540;                                 // gravity
+let SCALE = 1;
+function sizeGame(){
+  const w = cv.parentElement.clientWidth || innerWidth, h = cv.parentElement.clientHeight || innerHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.style.aspectRatio = "auto";
+  const pw = Math.round(w*dpr), ph = Math.round(h*dpr);
+  if (cv.width !== pw || cv.height !== ph){ cv.width = pw; cv.height = ph; }
+}
+window.addEventListener("resize", sizeGame);
+window.addEventListener("orientationchange", () => setTimeout(sizeGame, 200));
+function enterFS(){   // on phones, ask the browser to hide its bars too
+  if (!isPhone() || document.fullscreenElement) return;
+  try { const de = document.documentElement; (de.requestFullscreen || de.webkitRequestFullscreen)?.call(de).catch?.(() => {}); } catch {}
+}
+function exitFS(){ if (game.state === "running") game.paused = true; }
+$("fsExit").addEventListener("click", exitFS);
+
+/* ---------- the sea: real moving waves that grow the further out you go ---------- */
+const ZONES = [
+  {at:0,    name:"The Harbor",     sub:"Calm water. Warm up!",        sky:["#5ab4f0","#bfe6ff"], sea:["#2a9ad8","#0a3a7a"], cloud:.25, rain:0},
+  {at:250,  name:"The Bay",        sub:"A little bit of swell",        sky:["#4aa4e8","#b0dcff"], sea:["#1f8ad0","#083470"], cloud:.35, rain:0},
+  {at:700,  name:"Open Sea",       sub:"Nothing but water ahead",      sky:["#3a8ad8","#a0cff4"], sea:["#1a78c0","#062a60"], cloud:.45, rain:0},
+  {at:1400, name:"Choppy Waters",  sub:"The waves are building",       sky:["#4a7ab0","#a8c4dc"], sea:["#1a6aa8","#062454"], cloud:.6,  rain:0},
+  {at:2300, name:"Storm Front",    sub:"Hold on tight",                sky:["#4a5a78","#8a9ab0"], sea:["#1a5a88","#041c40"], cloud:.85, rain:.4},
+  {at:3500, name:"The Squall",     sub:"Rain and big rollers",         sky:["#3a4660","#6a7a90"], sea:["#164a74","#031634"], cloud:1,   rain:.8},
+  {at:5000, name:"Hurricane",      sub:"Only the brave get this far",  sky:["#2a3248","#58647a"], sea:["#123c62","#02102a"], cloud:1,   rain:1},
+  {at:7000, name:"Rogue Waves",    sub:"Waves as tall as buildings",   sky:["#1e2438","#4a5268"], sea:["#0e3256","#020c22"], cloud:1,   rain:.7},
+  {at:9500, name:"The Deep Ocean", sub:"Nobody's been this far",       sky:["#141a30","#3a4462"], sea:["#0a2a4a","#01081a"], cloud:.8,  rain:.3},
+];
+function zoneIndex(m){ if (m < ZONES[ZONES.length - 1].at) { let i = 0; while (i + 1 < ZONES.length && m >= ZONES[i + 1].at) i++; return i; } return ZONES.length - 1 + Math.floor((m - ZONES[ZONES.length - 1].at)/3000); }
+function zoneFor(i){ if (i < ZONES.length) return ZONES[i]; const k = i - ZONES.length + 2; return Object.assign({}, ZONES[ZONES.length - 1], {at: ZONES[ZONES.length - 1].at + (i - ZONES.length + 1)*3000, name:"The Deep Ocean " + k, sub:"Keep going!"}); }
+const toRGB = c => c[0] === "#" ? hexRGB(c) : c.match(/\d+/g).slice(0, 3).map(Number);
+const lerpC = (a, b, k) => { const A = toRGB(a), B = toRGB(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v)*k)).join(",")})`; };
+// the look of the sea and sky where you are, blending smoothly from one part into the next
+function lookAt(m){
+  let i = 0; while (i + 1 < ZONES.length && m >= ZONES[i + 1].at) i++;
+  const a = ZONES[i], b = ZONES[Math.min(i + 1, ZONES.length - 1)], k = b === a ? 0 : Math.max(0, Math.min(1, (m - (b.at - 150))/150));
+  return {sky:[lerpC(a.sky[0], b.sky[0], k), lerpC(a.sky[1], b.sky[1], k)], sea:[lerpC(a.sea[0], b.sea[0], k), lerpC(a.sea[1], b.sea[1], k)], cloud:a.cloud + (b.cloud - a.cloud)*k, rain:a.rain + (b.rain - a.rain)*k};
+}
+// how big the waves are at a spot (in world pixels): small in the harbor, huge far out, and they never stop growing
+function ampAt(x){ const m = Math.max(0, x)/PXM; return 5 + 115*(1 - Math.exp(-m/1200)) + 12*Math.log(1 + m/2500); }
+// three sets of waves that travel at their own speeds; crests are pointy and troughs are wide, like real swell
+// Bigger waves are also longer (like real ocean swell), so they get taller without turning into cliffs.
+const WAVES = [{l:380, s:.72, c:55, p:0}, {l:190, s:.2, c:-34, p:1.7}, {l:84, s:.05, c:22, p:4.1}];
+const STRETCH = 90000;                         // the waves are twice as long about 6 km out
+const wpos = x => x > 0 ? STRETCH*Math.log(1 + x/STRETCH) : x;   // distance along the sea, squeezed further out
+function surf(x, t){
+  const A = ampAt(x), X = wpos(x); let y = 0;
+  for (const w of WAVES){ const th = 2*Math.PI*(X - w.c*t)/w.l + w.p, u = (1 + Math.sin(th))/2; y -= A*w.s*(2*u*Math.sqrt(u) - 1); }
+  return y - Math.sin(x*.11 + t*2.3)*1.2;      // and a little ripple everywhere
+}
+const surfVel = (x, t) => (surf(x, t + .02) - surf(x, t - .02))/.04;
+
+/* ---------- the run ---------- */
+const MONSTER_CHANCE = 1/100;                 // about 1 run in 100 meets the sea serpent
+const game = {state:"ready", t:0, wt:0, paused:false, banner:null, texts:[], pops:[], parts:[], foam:[], coins:[], cans:[], dist:0, runCoins:0, zone:0,
+  b:null, cam:{x:0, y:0, z:1}, fuel:1, gas:false, brake:false, mt:0};
+function newBoat(x){ const v = curCar(), st = boatStats(v); return {v, st, x, y: surf(x, game.wt) - 4, vx:0, vy:0, a:0, w:0, inWater:true, airT:0, airRot:0, under:0, gone:false}; }
+function resetRun(){
+  Object.assign(game, {t:0, paused:false, banner:null, texts:[], pops:[], parts:[], foam:[], coins:[], cans:[], dist:0, runCoins:0, zone:0, fuel:1, noFuelT:0, lowWarned:false,
+    nextSpawn:90*PXM, nextCan:250*PXM, canN:0, nextBuoy:100, monsterEnd:false, cause:"", crashed:false, mt:0, newBest:false, maxAir:0, flips:0});
+  game.b = newBoat(60); game.cam = {x: 60 - 120, y: -40, z: 1};
+}
+function startRun(){
+  UI.screen = "home"; closeSheet(); enterFS();
+  resetRun(); game.state = "running";
+  game.banner = {text: ZONES[0].name, sub: TEST.on ? "Test ride" : "Hold GAS to go", t:2.4};
+  game.monsterAt = (TEST.monster || (!TEST.on && Math.random() < MONSTER_CHANCE)) ? (TEST.monster ? 60 : 400 + Math.random()*2200)*PXM : Infinity; TEST.monster = false;
+  $("overCta").hidden = true; Sound.start();
+}
+function endRun(){
+  if (game.state === "over") return;
+  game.state = "over"; game.overT = game.t; game.gas = game.brake = false;
+  const d = Math.floor(game.dist);
+  if (TEST.on){ game.newBest = false; return; }
+  state.runs++;
+  const newBest = d > state.best; if (newBest) state.best = d;
+  if (game.zone + 1 > state.bestRound) state.bestRound = game.zone + 1;
+  game.newBest = newBest;
+  Saves.save(true); renderHUD(); renderCode();
+  submitScore(d);
+}
+function crash(cause){
+  if (game.crashed || game.state !== "running") return; game.crashed = true; game.cause = cause || "wipeout";
+  const b = game.b; splash(b.x, surf(b.x, game.wt), 34, 1); Sound.crash(); endRun();
+}
+function addCoins(n){ game.runCoins += n; if (!TEST.on){ state.coins += n; state.lifetimeCoins += n; renderHUD(); } }
+function pop(txt, col, sub){ game.pops.push({txt, col, sub, t:0}); if (game.pops.length > 3) game.pops.shift(); }
+
+/* ---------- pickups placed ahead of you as you go ---------- */
+function spawnAhead(){
+  const b = game.b, ahead = b.x + 900;
+  while (game.nextSpawn < ahead){
+    const x0 = game.nextSpawn, m = x0/PXM;
+    const p100 = Math.min(.12, m/25000), p25 = Math.min(.35, m/4000);
+    const val = () => { const r = Math.random(); return r < p100 ? 100 : r < p100 + p25 ? 25 : 5; };
+    if (Math.random() < .55){            // a row of coins floating on the water
+      const n = 5 + (Math.random()*4 | 0), v = val();
+      for (let i = 0; i < n; i++) game.coins.push({x: x0 + i*26, off:14, v, spin:Math.random()*6});
+    } else {                             // an arc of coins up in the air, to reward a big jump
+      const n = 6 + (Math.random()*4 | 0), v = val(), hgt = 50 + Math.min(110, ampAt(x0)*.9) + Math.random()*30;
+      for (let i = 0; i < n; i++){ const k = i/(n - 1); game.coins.push({x: x0 + i*30, off: 30 + hgt*Math.sin(k*Math.PI), v, spin:Math.random()*6}); }
+    }
+    game.nextSpawn += (90 + Math.random()*90)*PXM;
+  }
+  while (game.nextCan < ahead){
+    game.cans.push({x: game.nextCan});
+    game.canN++; game.nextCan += Math.min(1100, 340 + game.canN*90 + Math.random()*60)*PXM;
+  }
+  game.coins = game.coins.filter(k => !k.got && k.x > b.x - 600);
+  game.cans = game.cans.filter(k => !k.got && k.x > b.x - 600);
+}
+
+/* ---------- splashes, spray and foam ---------- */
+function splash(x, y, n, k){
+  for (let i = 0; i < n; i++){ const a = -Math.PI/2 + (Math.random() - .5)*2.2, v = (80 + Math.random()*260)*k;
+    game.parts.push({x: x + (Math.random() - .5)*30, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v, life:.6 + Math.random()*.5, max:1.1, r:1.6 + Math.random()*2.4}); }
+}
+
+/* ---------- boat physics: it floats at a few points along the hull, the waves push on each one ---------- */
+const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2*Math.PI; while (d < -Math.PI) d += 2*Math.PI; return d; };
+function stepBoat(b, dt, gas, brake, canGo){
+  const st = b.st, L = st.L, hb = st.H*.45 + st.lift, I = L*L/12, t = game.wt;
+  const ca = Math.cos(b.a), sa = Math.sin(b.a);
+  b.vy += G*dt;
+  let sub = 0, sternD = -99, bowD = -99;
+  const P = [-L*.44, -L*.15, L*.15, L*.44];
+  for (let i = 0; i < P.length; i++){
+    const lx = P[i], wx = b.x + lx*ca - hb*sa, wy = b.y + lx*sa + hb*ca, s = surf(wx, t), d = wy - s;
+    if (i === 0) sternD = d; if (i === P.length - 1) bowD = d;
+    if (d <= 0) continue;
+    sub++;
+    const dd = Math.min(d, 24), rx = wx - b.x, ry = wy - b.y, pvy = b.vy + b.w*rx, pvx = b.vx - b.w*ry;
+    const Fy = -85*dd - 6.5*st.soft*(pvy - surfVel(wx, t)), Fx = -pvx*.35*Math.min(1, dd/8);
+    b.vx += Fx*dt; b.vy += Fy*dt; b.w += (rx*Fy - ry*Fx)/I*dt;
+  }
+  b.inWater = sub > 0;
+  const fan = b.v.body === "airboat";
+  if (canGo){
+    const push = st.thrust*(b.inWater && sternD > -4 ? 1 : fan ? .35 : 0);
+    if (gas && push){ b.vx += ca*push*dt; b.vy += sa*push*dt*.6; }
+    if (brake && (b.inWater || fan)){ if (b.vx > 25) b.vx -= st.thrust*.9*dt; else b.vx -= st.thrust*.35*dt; }
+  }
+  // tipping: GAS lifts the nose, BRAKE drops it. Works best in the air.
+  const tip = (brake ? 1 : 0) - (gas && canGo ? 1 : 0) + (brake && !canGo ? 0 : 0);
+  if (!b.inWater) b.w += tip*st.air*dt*1.15; else b.w += tip*st.air*.14*st.grip*dt;
+  if (b.inWater){
+    // the hull settles back flat against the water; a stronger hull does it faster
+    const slope = Math.atan2(surf(b.x + 8, t) - surf(b.x - 8, t), 16), rel = angDiff(b.a, slope), f = sub/P.length;
+    b.w -= st.stab*16*Math.sin(rel)*f*dt;
+    b.w *= Math.max(0, 1 - 3.2*dt);
+    const drag = st.thrust/(st.vmax*st.vmax);           // water drag: you reach top speed and no more
+    b.vx -= b.vx*Math.abs(b.vx)*drag*dt*(.4 + .6*f); b.vy -= b.vy*Math.abs(b.vy)*drag*.5*dt*f;
+    if (bowD > L*.25 && b.vx > 120) b.vx -= b.vx*1.6*dt;  // nose stuck into a wave: slows you hard
+  } else b.w *= Math.max(0, 1 - .25*dt);
+  b.w = Math.max(-9, Math.min(9, b.w));
+  b.x += b.vx*dt; b.y += b.vy*dt; b.a += b.w*dt;
+  if (b.x < -40){ b.x = -40; b.vx = Math.max(0, b.vx); }
+  return {sternD, bowD};
+}
+
+/* ---------- each frame ---------- */
+function update(dt){
+  game.t += dt;
+  if (game.banner){ game.banner.t -= dt; if (game.banner.t <= 0) game.banner = null; }
+  game.pops.forEach(p => p.t += dt); game.pops = game.pops.filter(p => p.t < 1.6);
+  if (game.paused) return;
+  game.wt += dt;
+  game.parts.forEach(p => { p.vy += 600*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt; }); game.parts = game.parts.filter(p => p.life > 0);
+  game.foam.forEach(f => f.life -= dt); game.foam = game.foam.filter(f => f.life > 0);
+  const b = game.b; if (!b) return;
+  if (game.state === "monster"){ updateMonster(dt); return; }
+  const run = game.state === "running", canGo = run && game.fuel > 0;
+  const gas = run && game.gas, brake = run && game.brake && !game.gas;
+  const wasIn = b.inWater, vyIn = b.vy;
+  let r = {};
+  for (let i = 0; i < 4; i++) r = stepBoat(b, dt/4, gas, brake, canGo);
+  // spray and a foamy wake while you ride
+  const speed = Math.hypot(b.vx, b.vy);
+  if (b.inWater && speed > 60 && Math.random() < dt*40){ const sx = b.x - Math.cos(b.a)*b.st.L*.45; game.parts.push({x:sx, y: surf(sx, game.wt) - 2, vx: -40 - Math.random()*60, vy: -60 - Math.random()*90*(gas ? 1.5 : .6), life:.45, max:.45, r:1.4 + Math.random()*1.6}); }
+  if (b.inWater && Math.random() < dt*18) game.foam.push({x: b.x - Math.cos(b.a)*b.st.L*.5, life:1.6, max:1.6, w: 6 + Math.min(14, speed/20)});
+  if (!wasIn && b.inWater && vyIn > 180){ splash(b.x, surf(b.x, game.wt), Math.min(26, vyIn/22 | 0), Math.min(1.2, vyIn/700)); Sound.splash(vyIn/800); }
+  if (game.state === "ready"){ b.vx *= Math.max(0, 1 - 2*dt); b.x += (60 - b.x)*Math.min(1, dt*.5); moveCam(dt, true); return; }
+  if (!run){ moveCam(dt); return; }
+  // distance and new parts of the sea
+  game.dist = Math.max(game.dist, b.x/PXM);
+  const zi = zoneIndex(game.dist);
+  if (zi > game.zone){ game.zone = zi; const z = zoneFor(zi), bonus = 10*zi; addCoins(bonus); game.banner = {text: z.name, sub: z.sub + " · +" + bonus + " coins", t:2.6}; Sound.zone(); Saves.save(); }
+  // fuel
+  game.fuel = Math.max(0, game.fuel - dt*(gas ? 1 : .3)/b.st.tank);
+  if (game.fuel <= .2 && !game.lowWarned){ game.lowWarned = true; pop("LOW FUEL!", "#ff6a4a"); }
+  if (game.fuel <= 0){ if (!game.noFuelT) Sound.empty(); game.noFuelT += dt; if ((Math.abs(b.vx) < 14 && game.noFuelT > 1.5) || game.noFuelT > 9){ game.cause = "fuel"; return endRun(); } }
+  // air time and flips
+  if (!b.inWater){ b.airT += dt; if (b.airT > .15) b.airRot += b.w*dt; }
+  else if (b.airT > 0){
+    const flips = Math.floor((Math.abs(b.airRot) + .7)/(2*Math.PI));
+    if (flips > 0){ const n = 25*flips; addCoins(n); game.flips += flips; pop((flips > 1 ? flips + "x " : "") + (b.airRot < 0 ? "BACKFLIP!" : "FRONTFLIP!"), "#7fffd4", "+" + n + " coins"); Sound.stunt(); }
+    else if (b.airT > 1.3){ const n = Math.round(b.airT*6); addCoins(n); pop("BIG AIR!", "#ffd34d", b.airT.toFixed(1) + " s · +" + n + " coins"); Sound.stunt(); }
+    game.maxAir = Math.max(game.maxAir, b.airT); b.airT = 0; b.airRot = 0;
+  }
+  // wipeouts: landing upside down, or the rider's head going under
+  const up = Math.cos(b.a), [hx0, hy0] = headPoint(b.v), hx = b.x + hx0*Math.cos(b.a) - hy0*Math.sin(b.a), hy = b.y + hx0*Math.sin(b.a) + hy0*Math.cos(b.a);
+  const headUnder = hy - surf(hx, game.wt);
+  // upright, a splash over the rider's head is fine; upside down, it isn't
+  if ((up < -.2 && b.inWater) || headUnder > (up > .3 ? 14 : 3)) b.under += dt; else b.under = Math.max(0, b.under - dt*2);
+  if (b.under > .28*b.st.soft || (headUnder > 18 && up < .3)){ return crash("wipeout"); }
+  // pickups
+  spawnAhead();
+  const cx = b.x, cy = b.y - b.st.H*.4;
+  for (const k of game.coins){ if (k.got) continue; const ky = surf(k.x, game.wt) - k.off; const dx = k.x - cx, dy = ky - cy;
+    if (dx*dx + dy*dy < (b.st.L*.5 + 8)*(b.st.L*.5 + 8) && Math.abs(dy) < 26){ k.got = true; addCoins(k.v); Sound.coin(); game.texts.push({txt:"+" + k.v, x:k.x, y:ky, t:0}); } }
+  for (const c of game.cans){ if (c.got) continue; const cy2 = surf(c.x, game.wt) - 10; if (Math.abs(c.x - cx) < b.st.L*.5 + 10 && Math.abs(cy2 - cy) < 34){ c.got = true; game.fuel = 1; game.lowWarned = false; game.noFuelT = 0; Sound.fuel(); pop("FUEL!", "#ff8a6a"); } }
+  game.texts.forEach(x => x.t += dt); game.texts = game.texts.filter(x => x.t < .9);
+  if (b.x >= game.monsterAt) startMonster();
+  moveCam(dt);
+}
+function moveCam(dt, idle){
+  const b = game.b, c = game.cam, wide = cv.width/cv.height >= 1.05;
+  const zt = idle ? 1 : 1 + Math.max(0, ampAt(b.x) - 30)/120 + Math.max(0, -b.y - 140)/700;
+  c.z += (Math.min(2.2, zt) - c.z)*Math.min(1, dt*1.2);
+  const VW = viewW(), lead = idle ? (wide ? .2 : .5) : .3 + Math.max(-.08, Math.min(.06, -b.vx/4000));
+  c.x += (b.x - VW*lead - c.x)*Math.min(1, dt*(idle ? 2 : 6));
+  const ty = idle ? b.y - viewH()*(wide ? .2 : .24) : b.y*.7 + (wide ? 0 : viewH()*.04);
+  c.y += (ty - c.y)*Math.min(1, dt*3);
+}
+const viewW = () => { const w = cv.width, h = cv.height; return (w/h < 1.05 ? 300 : 320*w/h)*game.cam.z; };
+const viewH = () => viewW()*cv.height/cv.width;
+
+/* ---------- the sea serpent ---------- */
+function startMonster(){ game.state = "monster"; game.mt = 0; game.gas = game.brake = false; const b = game.b; game.sx = b.x + 150; Sound.monster(); game.monsterAt = Infinity; }
+function updateMonster(dt){
+  game.mt += dt; const b = game.b, t = game.mt;
+  b.vx *= Math.max(0, 1 - 1.5*dt); for (let i = 0; i < 4; i++) stepBoat(b, dt/4, false, false, false);
+  if (t > 1.9 && !b.gone){ b.gone = true; splash(b.x, surf(b.x, game.wt), 30, 1); Sound.splash(1); }
+  if (t > 1.2 && t < 2.2 && Math.random() < dt*30) splash(game.sx + (Math.random() - .5)*60, surf(game.sx, game.wt), 2, .5);
+  moveCam(dt);
+  if (t >= 3.6){ game.monsterEnd = true; game.cause = "monster"; game.state = "running"; endRun(); }
+}
+function drawMonster(){
+  const t = game.mt, b = game.b, sx = game.sx, base = surf(sx, game.wt);
+  const rise = Math.min(1, t/1.2), bite = Math.max(0, Math.min(1, (t - 1.2)/.6)), sink = Math.max(0, (t - 2.6)/1);
+  const top = base - (220*rise - 200*sink);
+  // the neck: a big curve up out of the water and over toward the boat
+  const hx = sx + (b.x - sx)*bite*.95, hy = top + (b.y - 30 - top)*bite;
+  ctx.lineCap = "round";
+  const neck = (w, col) => { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(sx + 40, base + 30); ctx.quadraticCurveTo(sx + 50, top - 30, hx, hy); ctx.stroke(); };
+  neck(46, "#1a5a3a"); neck(34, "#2a8a4a"); neck(12, "#7ac86a");
+  // the head with an open jaw
+  ctx.save(); ctx.translate(hx, hy); ctx.rotate(-.5 + bite*1.2);
+  const jaw = .55*(1 - bite) + .1;
+  ctx.fillStyle = "#2a8a4a"; ctx.beginPath(); ctx.ellipse(-6, -10, 34, 20, -jaw*.6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#1a6a3a"; ctx.beginPath(); ctx.ellipse(-6, 14, 30, 12, jaw*.6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#ffffff"; for (let i = 0; i < 5; i++){ ctx.beginPath(); ctx.moveTo(-26 + i*10, 2 - jaw*12); ctx.lineTo(-22 + i*10, 9 - jaw*12); ctx.lineTo(-18 + i*10, 2 - jaw*12); ctx.fill(); }
+  ctx.fillStyle = "#ffd34d"; ctx.beginPath(); ctx.arc(4, -18, 6, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = "#0a0a0e"; ctx.fillRect(3, -23, 3, 10);
+  ctx.fillStyle = "#1a5a3a"; for (let i = 0; i < 4; i++){ ctx.beginPath(); ctx.moveTo(10 - i*12, -28); ctx.lineTo(4 - i*12, -40); ctx.lineTo(-2 - i*12, -28); ctx.fill(); }
+  ctx.restore();
+}
+
+/* ---------- drawing ---------- */
+const CLOUDS = Array.from({length:9}, (_, i) => ({x: i*230 + Math.random()*120, y: 30 + Math.random()*90, s: .7 + Math.random()*.8}));
+function drawSky(look, sw, sh, hz){
+  const g = ctx.createLinearGradient(0, 0, 0, sh); g.addColorStop(0, look.sky[0]); g.addColorStop(1, look.sky[1]); ctx.fillStyle = g; ctx.fillRect(0, 0, sw, sh);
+  // the sun, low and soft, fading behind storm clouds
+  ctx.globalAlpha = Math.max(.15, 1 - look.cloud*.8); ctx.fillStyle = "#fff6d0"; ctx.beginPath(); ctx.arc(sw*.78, Math.min(sh*.16, hz*.45), Math.min(sw, sh)*.06, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+  // clouds drift slowly; in storms they get darker
+  const cc = lerpC("#ffffff", "#5a6278", Math.max(0, look.cloud - .4)/.6), u = Math.min(sw, sh)/420, band = Math.max(40, hz/u*.7);
+  ctx.fillStyle = cc; ctx.globalAlpha = .55 + look.cloud*.35;
+  const n = Math.round(4 + look.cloud*5);
+  for (let i = 0; i < n; i++){ const c = CLOUDS[i], x = ((c.x - game.cam.x*.05 - game.t*4) % (sw/u + 400) + sw/u + 400) % (sw/u + 400) - 200;
+    const X = x*u, Y = (14 + (c.y - 30)/90*band*.85)*u, s = c.s*u*(1 + look.cloud*.6);
+    ctx.beginPath(); ctx.ellipse(X, Y, 46*s, 15*s, 0, 0, Math.PI*2); ctx.ellipse(X + 30*s, Y - 8*s, 30*s, 14*s, 0, 0, Math.PI*2); ctx.ellipse(X - 28*s, Y - 4*s, 26*s, 12*s, 0, 0, Math.PI*2); ctx.fill(); }
+  ctx.globalAlpha = 1;
+}
+function drawCoinW(x, y, v, spin){
+  const r = v >= 100 ? 9 : v >= 25 ? 7.5 : 6.5, col = v >= 100 ? ["#ffe36e","#c8901a"] : v >= 25 ? ["#e8ecf4","#8a92a8"] : ["#ffc83a","#a86a10"], w = Math.abs(Math.cos(spin));
+  ctx.fillStyle = col[1]; ctx.beginPath(); ctx.ellipse(x, y, r*w + 1.2, r + 1.2, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = col[0]; ctx.beginPath(); ctx.ellipse(x, y, r*w, r, 0, 0, Math.PI*2); ctx.fill();
+  if (w > .4){ ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.fillRect(x - r*w*.4, y - r*.5, 1.6, r*.8); }
+}
+function drawCan(x, y, a){
+  ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+  ctx.fillStyle = "#8a1a10"; ctx.fillRect(-9, -12, 18, 22); ctx.fillStyle = "#e0302a"; ctx.fillRect(-8, -11, 16, 20);
+  ctx.fillStyle = "#3a3e48"; ctx.fillRect(2, -16, 5, 5); ctx.fillStyle = "#8a1a10"; ctx.fillRect(-7, -15, 7, 3);
+  ctx.fillStyle = "#ffd34d"; ctx.font = "700 9px 'Pixelify Sans', monospace"; ctx.textAlign = "center"; ctx.fillText("FUEL", 0, 3);
+  ctx.restore();
+}
+function draw(dt){
+  const W = cv.width, H = cv.height, VW = viewW(), sc = W/VW, VH = H/sc, b = game.b, c = game.cam;
+  const look = lookAt(Math.max(0, c.x + VW*.5)/PXM);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const left = c.x, top = c.y - VH*.52, right = left + VW, bottom = top + VH;
+  drawSky(look, W, H, Math.max(0, (-30 - top)*sc));
+  ctx.setTransform(sc, 0, 0, sc, -left*sc, -top*sc);
+  const t = game.wt, step = Math.max(4, VW/110);
+  // far-off islands (and a lighthouse at the harbor)
+  ctx.fillStyle = lerpC(lerpC(look.sky[1], "#2a5a4a", .55), look.sea[1], .2);
+  for (let i = -1; i < 6; i++){ const px = Math.floor(left*.15/700)*700 + i*700, x = left + (px - left*.15) + 120, w = 160 + (Math.abs(px*7) % 140);
+    ctx.beginPath(); ctx.ellipse(x, -18, w, 26 + (Math.abs(px*3) % 18), 0, Math.PI, 0); ctx.fill(); }
+  if (left < 600){ ctx.fillStyle = "#e8ecf4"; ctx.fillRect(-150, -150, 22, 150); ctx.fillStyle = "#e0302a"; ctx.fillRect(-150, -120, 22, 16); ctx.fillRect(-150, -80, 22, 16); ctx.fillStyle = "#3a3e48"; ctx.fillRect(-154, -166, 30, 16); ctx.fillStyle = "#fff3b0"; ctx.fillRect(-146, -162, 14, 9); }
+  // the back row of waves
+  ctx.fillStyle = lerpC(look.sea[0], look.sea[1], .3);
+  ctx.beginPath(); ctx.moveTo(left - 20, bottom + 20);
+  for (let x = left - 20; x <= right + 20; x += step) ctx.lineTo(x, surf(x*.8 + 211, t*.85)*.55 - 22);
+  ctx.lineTo(right + 20, bottom + 20); ctx.closePath(); ctx.fill();
+  // the dock at the start
+  if (left < 200){ ctx.fillStyle = "#7a5a3a"; ctx.fillRect(-120, -10, 130, 7); ctx.fillStyle = "#5a3e26"; for (let i = 0; i < 5; i++) ctx.fillRect(-116 + i*30, -4, 5, 60); }
+  // distance buoys every 100 m
+  for (let m = Math.ceil(left/PXM/100)*100; m*PXM < right + 40; m += 100){ if (m <= 0) continue; const x = m*PXM, y = surf(x, t);
+    ctx.fillStyle = "#3a3e48"; ctx.fillRect(x - 1, y - 40, 2, 36); ctx.fillStyle = m % 500 ? "#ffffff" : "#ffd34d"; ctx.fillRect(x - 15, y - 54, 30, 15); ctx.fillStyle = "#e0302a"; ctx.beginPath(); ctx.ellipse(x, y - 2, 8, 6, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#1a2030"; ctx.font = "700 10px 'Pixelify Sans', monospace"; ctx.textAlign = "center"; ctx.fillText(m + "m", x, y - 43); }
+  // the boat goes behind the front of the water so it sits in it, not on top
+  const drawB = () => { if (!b || b.gone || (game.state === "over" && game.cause === "monster")) return;
+    ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a); paintBoat(ctx, b.v, {t:game.t}); ctx.restore(); };
+  // pickups
+  for (const k of game.coins){ if (k.got || k.x < left - 20 || k.x > right + 20) continue; drawCoinW(k.x, surf(k.x, t) - k.off, k.v, k.spin + game.t*4); }
+  for (const k of game.cans){ if (k.got || k.x < left - 20 || k.x > right + 20) continue; const y = surf(k.x, t); drawCan(k.x, y - 8, Math.atan2(surf(k.x + 6, t) - surf(k.x - 6, t), 12)); }
+  if (game.state === "monster") drawMonster();
+  drawB();
+  // the water itself
+  const g = ctx.createLinearGradient(0, -ampAt(c.x + VW/2) - 10, 0, bottom); g.addColorStop(0, look.sea[0]); g.addColorStop(1, look.sea[1]);
+  ctx.fillStyle = g; ctx.globalAlpha = .93;
+  ctx.beginPath(); ctx.moveTo(left - 20, bottom + 20);
+  const pts = []; for (let x = left - 20; x <= right + 20; x += step){ const y = surf(x, t); pts.push([x, y]); ctx.lineTo(x, y); }
+  ctx.lineTo(right + 20, bottom + 20); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+  // a lighter band just under the surface, and white foam on the crests
+  ctx.strokeStyle = "rgba(255,255,255,.1)"; ctx.lineWidth = 5; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y + 5) : ctx.moveTo(x, y + 5)); ctx.stroke();
+  ctx.strokeStyle = "rgba(235,248,255,.85)"; ctx.lineWidth = 2.2; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,.75)";
+  for (let i = 1; i < pts.length - 1; i++){ const [x, y] = pts[i], A = ampAt(x); if (A > 14 && y < pts[i - 1][1] && y <= pts[i + 1][1] && y < -A*.5){ ctx.beginPath(); ctx.ellipse(x, y + 1, 7 + A*.08, 3, 0, 0, Math.PI*2); ctx.fill(); } }
+  // the wake behind the boat
+  for (const f of game.foam){ const a = f.life/f.max; ctx.fillStyle = `rgba(255,255,255,${.5*a})`; ctx.beginPath(); ctx.ellipse(f.x, surf(f.x, t) + 1, f.w*(1.6 - a), 2.4, 0, 0, Math.PI*2); ctx.fill(); }
+  // spray
+  ctx.fillStyle = "rgba(235,248,255,.9)"; for (const p of game.parts){ ctx.globalAlpha = Math.min(1, p.life*2.5); ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); } ctx.globalAlpha = 1;
+  // coin numbers
+  game.texts.forEach(x => { ctx.globalAlpha = 1 - x.t/.9; ctx.fillStyle = "#ffe08a"; ctx.font = "700 12px 'Pixelify Sans', monospace"; ctx.textAlign = "center"; ctx.fillText(x.txt, x.x, x.y - 14 - x.t*26); }); ctx.globalAlpha = 1;
+  // rain in the storms: thin slanted streaks, calm and steady
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (look.rain > 0){ ctx.strokeStyle = `rgba(210,225,245,${.28*look.rain})`; ctx.lineWidth = Math.max(1, W/700); ctx.beginPath(); const n = Math.round(90*look.rain), u = W/400;
+    for (let i = 0; i < n; i++){ const x = ((i*97.3 + game.t*60*u) % (W + 60)) - 30, y = ((i*53.7 + game.t*520*u + i*i) % (H + 40)) - 20; ctx.moveTo(x, y); ctx.lineTo(x - 5*u, y + 14*u); } ctx.stroke(); }
+  if (game.state === "monster" && game.mt > 2.6){ ctx.fillStyle = `rgba(2,6,20,${Math.min(.6, (game.mt - 2.6)*.6)})`; ctx.fillRect(0, 0, W, H); }
+  uiFrame(dt);
+}
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.max(0, Math.min(.033, (now - last)/1000)); last = now;
+  update(dt); draw(dt);
+  { const hide = (game.state === "running") && !game.paused && !isPhone(); if (hide !== frame.hid){ frame.hid = hide; cv.style.cursor = hide ? "none" : ""; } }
+  drawChest(false, now/1000);
+  if (Math.floor(now/120) !== frame.k){ frame.k = Math.floor(now/120); renderNow(); }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- controls: GAS and BRAKE ---------- */
+const keys = {};
+const touches = new Map();     // finger id -> "gas" or "brake"
+const typing = () => { const a = document.activeElement; return a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT" || a.tagName === "BUTTON"); };
+function readControls(){
+  let g = keys.gas || false, br = keys.brake || false;
+  for (const v of touches.values()){ if (v === "gas") g = true; else br = true; }
+  game.gas = g; game.brake = br;
+}
+function go(){
+  if (cfOpen) return;
+  if (game.state === "monster") return;
+  if (game.state !== "running"){ if (game.state === "over" && game.t - game.overT < .8) return; startRun(); return; }
+  if (game.paused) game.paused = false;
+}
+const GAS_KEYS = ["ArrowRight", "KeyD", "Space", "ArrowUp", "KeyW"], BRAKE_KEYS = ["ArrowLeft", "KeyA", "ArrowDown", "KeyS"];
+document.addEventListener("keydown", e => {
+  if (cfOpen){ if (e.key === "Escape") closeChest(); return; }
+  if (uiKey(e)){ e.preventDefault(); return; }
+  if (typing()) return;
+  const isGas = GAS_KEYS.includes(e.code), isBrake = BRAKE_KEYS.includes(e.code);
+  if (isGas || isBrake || e.code === "Enter"){ e.preventDefault();
+    if (game.state !== "running"){ if (!e.repeat && (e.code === "Space" || e.code === "Enter" || e.code === "ArrowRight" || e.code === "KeyD") && !(game.state === "over" && game.t - game.overT < .8)) go(); if (game.state !== "running") return; }
+    if (isGas) keys.gas = true; if (isBrake) keys.brake = true; readControls(); }
+  else if ((e.code === "KeyP" || e.key === "Escape") && game.state === "running") game.paused = !game.paused;
+});
+document.addEventListener("keyup", e => { if (GAS_KEYS.includes(e.code)) keys.gas = false; if (BRAKE_KEYS.includes(e.code)) keys.brake = false; readControls(); });
+cv.addEventListener("pointerdown", e => {
+  e.preventDefault(); Sound.wake();
+  if (uiPointerDown(e)) return;
+  if (game.state !== "running"){ go(); return; }
+  const r = cv.getBoundingClientRect(); touches.set(e.pointerId, e.clientX - r.left > r.width/2 ? "gas" : "brake"); try { cv.setPointerCapture(e.pointerId); } catch {} readControls();
+});
+const lift = e => { touches.delete(e.pointerId); readControls(); };
+cv.addEventListener("pointerup", lift); cv.addEventListener("pointercancel", lift);
+window.addEventListener("blur", () => { touches.clear(); keys.gas = keys.brake = false; readControls(); });
+cv.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("visibilitychange", () => { if (document.hidden && game.state === "running") game.paused = true; });
+sizeGame(); resetRun(); game.state = "ready";
+/* ---------- what the shared app interface needs to know about Swell Surfer ---------- */
+const UI_CFG = {
+  title: [["SWELL", "#7fe0ff", "#0a3a6a"], ["SURFER", "#ffd34d", "#7a4a08"]],
+  unit: "M", accent: "#7fe0ff", accentEdge: "rgba(127,224,255,.45)", defaultName: "Rider", monsterState: "monster",
+  collectionTitle: "GARAGE", collectionShort: "GARAGE", lockedMsg: "Buy this boat in the Garage",
+  cardCol: "#123a5a", cardEdge: "#2a6a9a",
+  score: () => Math.floor(game.dist),
+  place: () => { const z = zoneFor(game.zone), n = zoneFor(game.zone + 1); return {name: z.name.toUpperCase(), progress: (game.dist - z.at)/Math.max(1, n.at - z.at)}; },
+  bannerPre: () => "NOW ENTERING", bannerMain: t => t.toUpperCase(),
+  hint: () => isPhone() ? "Hold the right side for GAS, left to BRAKE" : "Hold → for GAS and ← to BRAKE",
+  play: () => go(), pause: () => { game.paused = true; touches.clear(); keys.gas = keys.brake = false; readControls(); }, resume: () => { game.paused = false; },
+  toReady: () => { resetRun(); game.state = "ready"; },
+  icon: c => { c.beginPath(); c.moveTo(-12, -3); c.lineTo(9, -3); c.lineTo(13, -7); c.lineTo(10, 5); c.lineTo(-11, 5); c.closePath(); c.fill(); c.fillRect(-4, -9, 3, 6); c.beginPath(); c.arc(-2.5, -11, 3, 0, Math.PI*2); c.fill(); },
+  icons: {
+    wrench: c => { c.save(); c.rotate(-.7); c.fillRect(-2.5, -4, 5, 15); c.beginPath(); c.arc(0, -7, 6.5, 0, Math.PI*2); c.fill(); c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(-2.2, -14, 4.4, 7); c.restore(); },
+  },
+  crates: () => [],
+  nav: () => [["GARAGE", "#3a8ae8", "collection", () => openGarage()], ["SCORES", "#e8a02a", "trophy", () => goScreen("scores")],
+    [signedIn() ? "ME" : "SAVE", "#2ab8a8", "person", () => openSheet(signedIn() ? null : "signup"), !signedIn()]],
+  overNav: () => [["#5a6ab8", "home", () => goScreen("home")], ["#3a8ae8", "wrench", () => openGarage(), canUpgradeAny()]],
+  screens: { garage: () => uiGarage() },
+  records: () => [["Best ride", fmt(state.best) + " m"], ["Furthest out", state.bestRound ? zoneFor(state.bestRound - 1).name : "—"], ["Rides", fmt(state.runs)], ["Coins earned", fmt(state.lifetimeCoins)], ["Boats owned", Object.keys(state.owned).length + " / " + CHARS.length]],
+  overInfo: () => ({title: game.cause === "monster" ? "SEA SERPENT!" : game.cause === "fuel" ? "OUT OF FUEL" : "WIPEOUT!",
+    col: game.cause === "monster" ? "#7ac86a" : game.cause === "fuel" ? "#ffb347" : "#ff6a4a", deep: game.cause === "monster" ? "#0a3a1a" : game.cause === "fuel" ? "#6a3a08" : "#6a1a0a",
+    dark: game.cause === "monster", place: zoneFor(game.zone).name.toUpperCase()}),
+  extra: (W, H) => {
+    const st = game.state;
+    if (st === "monster" && game.mt > .6) uiText("SEA SERPENT!", W/2, H*.24, 36, "#7ac86a", "center", "#0a3a1a");
+    if (st === "running" || st === "monster"){ uiFuel(W, H); if (st === "running" && !game.paused) uiPedals(W, H); }
+    // stunt and pickup call-outs
+    game.pops.forEach((p, i) => { const a = Math.min(1, (1.6 - p.t)*3), y = H*.42 - i*44 - p.t*16; ctx.globalAlpha = Math.max(0, a);
+      uiText(p.txt, W/2, y, 26, p.col, "center"); if (p.sub) uiText(p.sub, W/2, y + 20, 13, "#ffffff", "center"); ctx.globalAlpha = 1; });
+  },
+};
+const canUpgradeAny = () => !TEST.on && Object.keys(state.owned).some(id => upLevels(+id).some((lv, i) => lv < MAX_LV && state.coins >= upCost(CHARS[+id], i, lv)));
+// the fuel gauge, under the place name
+function uiFuel(W, H){
+  const f = game.fuel, w = 132, x = 12, y = 96, col = f > .45 ? "#5ad85a" : f > .2 ? "#ffd34d" : "#ff4a3a";
+  uiPill(x, y, w, 26, "rgba(10,14,40,.75)", f > .2 ? "rgba(255,255,255,.3)" : "rgba(255,90,60,.8)");
+  ctx.fillStyle = "#e0302a"; ctx.fillRect(x + 10, y + 7, 10, 13); ctx.fillStyle = "#3a3e48"; ctx.fillRect(x + 16, y + 4, 4, 4);   // little red can
+  uiRR(x + 26, y + 9, w - 38, 9, 4, "rgba(255,255,255,.15)"); uiRR(x + 26, y + 9, (w - 38)*f, 9, 4, col);
+}
+// GAS and BRAKE pedals in the bottom corners (the whole left or right half of the screen works too)
+function uiPedals(W, H){
+  const pw = Math.min(110, W*.26), ph = 70, y = H - ph - 18;
+  const pedal = (x, label, on, col) => { const lift = on ? 1 : 5;
+    uiRR(x, y + 5, pw, ph, 14, "rgba(0,0,0,.35)"); uiRR(x, y + 5 - lift, pw, ph, 14, on ? uiShade(col, .2) : rgba(col, .78));
+    for (let i = 0; i < 3; i++) uiRR(x + 12, y + 18 - lift + i*14, pw - 24, 5, 3, "rgba(0,0,0,.18)");
+    uiText(label, x + pw/2, y + ph/2 + 10 - lift, 19, "#ffffff", "center", uiShade(col, -.55)); };
+  pedal(14, "BRAKE", game.brake && !game.gas, "#e8503a");
+  pedal(W - pw - 14, "GAS", game.gas, "#3ab84a");
+}
+
+/* ---------- the Garage: buy boats, pick one, and upgrade it ---------- */
+const GAR = {i:0};
+function openGarage(){ GAR.i = curCar().id; goScreen("garage"); }
+function buyBoat(c){
+  if (state.owned[c.id]) return;
+  if (state.coins < c.price){ toast(fmt(c.price - state.coins) + " more coins needed"); return; }
+  state.coins -= c.price; state.owned[c.id] = 1; state.selected = c.id; Sound.buy();
+  Saves.save(true); renderHUD(); toast("You bought the " + c.name + "!");
+}
+function buyUpgrade(c, i){
+  const lv = upLevels(c.id), cost = upCost(c, i, lv[i]);
+  if (TEST.on){ toast("Upgrades are paused in test mode"); return; }
+  if (lv[i] >= MAX_LV) return;
+  if (state.coins < cost){ toast(fmt(cost - state.coins) + " more coins needed"); return; }
+  state.coins -= cost; state.up = state.up || {}; const n = lv.slice(); n[i]++; state.up[c.id] = n; Sound.buy();
+  Saves.save(true); renderHUD();
+}
+function uiGarage(){
+  const W = UI.W, H = UI.H, c = CHARS[GAR.i], own = !!state.owned[c.id] || TEST.on, sel = curCar().id === c.id, lv = upLevels(c.id), wide = W >= 560;
+  uiHeader("GARAGE"); uiCoins(W - 12, 12);
+  // the boat, bobbing on a little bit of water, with arrows to look through all of them
+  const cw = wide ? Math.min(360, W*.46) : W - 24, cx = wide ? W/2 - cw - 8 : 12, cy = 70, chh = wide ? H - 90 : 312;
+  uiCard(cx, cy, cw, chh);
+  uiText((c.id + 1) + " / " + CHARS.length, cx + cw/2, cy + 24, 12, "#9ac8e8", "center", null);
+  uiText(c.name, cx + cw/2, cy + 48, c.name.length > 12 ? 20 : 24, isCreator(c) ? "#ffd34d" : "#ffffff", "center");
+  uiText(TIERS[c.tier].name.toUpperCase() + " · " + c.blurb, cx + cw/2, cy + 66, 11, TIERS[c.tier].color, "center", null);
+  const by = cy + (wide ? 160 : 146), bw = Math.min(cw - 110, 220);
+  ctx.save(); ctx.beginPath(); ctx.rect(cx + 50, by - 72, cw - 100, 98); ctx.clip();
+  ctx.fillStyle = "rgba(42,154,216,.55)"; ctx.beginPath(); ctx.moveTo(cx, by + 40);
+  for (let x = cx; x <= cx + cw; x += 4) ctx.lineTo(x, by + 4 + Math.sin(x*.06 + UI.t*2)*2.5); ctx.lineTo(cx + cw, by + 40); ctx.closePath(); ctx.fill();
+  const k = Math.min(1.5, 150/c.L, 52/(c.H*3.2)); ctx.translate(cx + cw/2, by + 2 + Math.sin(UI.t*2)*2.4); ctx.rotate(Math.sin(UI.t*1.6)*.04); ctx.scale(k, k); paintBoat(ctx, c, {sil:false, t:UI.t}); ctx.restore();
+  uiButton(cx + 10, by - 34, 38, 46, "#2a5a8a", "", () => { GAR.i = (GAR.i + CHARS.length - 1) % CHARS.length; }, "back");
+  ctx.save(); ctx.translate(cx + cw - 29, 0); ctx.scale(-1, 1); ctx.translate(-(cx + cw - 29), 0);
+  uiButton(cx + cw - 48, by - 34, 38, 46, "#2a5a8a", "", () => { GAR.i = (GAR.i + 1) % CHARS.length; }, "back"); ctx.restore();
+  { const bt = UI.buttons[UI.buttons.length - 1]; bt.x = cx + cw - 48; }   // the flipped arrow's tap area
+  // its numbers
+  const bars = statBars(c, lv), names = ["SPEED", "HANDLING", "FUEL", "HULL"], sy = by + 36;
+  bars.forEach((v, i) => { const y = sy + i*17; uiText(names[i], cx + 18, y + 9, 11, "#a8c8e8", "left", null);
+    uiRR(cx + 96, y, cw - 114, 9, 4, "rgba(255,255,255,.12)"); uiRR(cx + 96, y, (cw - 114)*Math.max(.04, v), 9, 4, UPGRADES[i].col); });
+  // buy it, or ride it
+  const ay = wide ? cy + chh - 62 : sy + 74;
+  if (!own) uiButton(cx + cw/2 - 100, ay, 200, 48, state.coins >= c.price ? "#5ad85a" : "#4a5070", "BUY " + fmt(c.price), () => buyBoat(c), "coin");
+  else if (sel) { uiPill(cx + cw/2 - 80, ay + 6, 160, 34, "rgba(10,14,40,.6)", "rgba(127,224,255,.6)"); uiText("RIDING THIS ONE", cx + cw/2, ay + 29, 14, "#7fe0ff", "center", null); }
+  else uiButton(cx + cw/2 - 80, ay, 160, 48, "#2ab8a8", "RIDE IT", () => selectChar(c.id), "play");
+  // upgrades for this boat
+  const ux = wide ? W/2 + 8 : 12, uw = wide ? Math.min(360, W*.46) : W - 24, uy = wide ? 70 : cy + chh + 12, cols = wide ? 1 : 2;
+  const tw = (uw - (cols - 1)*10)/cols, th = wide ? Math.min(78, (H - 90 - 50)/4) : Math.min(104, (H - uy - 16 - 10)/2);
+  if (!wide && th < 70){ /* tiny screens: not enough room; the list still works, just tighter */ }
+  if (!own){ uiCard(ux, uy, uw, wide ? 120 : Math.max(80, Math.min(140, H - uy - 16))); uiText("UPGRADES", ux + uw/2, uy + 34, 18, "#ffd27a", "center");
+    uiText("Buy this boat to upgrade it", ux + uw/2, uy + 62, 13, "#c8d8e8", "center", null); return; }
+  if (wide) uiText("UPGRADES", ux + uw/2, uy + 10, 16, "#ffd27a", "center");
+  UPGRADES.forEach((u, i) => {
+    const col = i % cols, row = Math.floor(i/cols), x = ux + col*(tw + 10), y = uy + (wide ? 20 : 0) + row*(th + 10), L = lv[i], max = L >= MAX_LV, cost = max ? 0 : upCost(c, i, L);
+    uiRR(x, y + 4, tw, th, 12, "rgba(0,0,0,.35)"); uiRR(x, y, tw, th, 12, "#123a5a"); ctx.strokeStyle = u.col; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x, y, tw, th, 12); ctx.stroke();
+    uiText(u.name, x + 12, y + 20, 14, "#ffffff", "left");
+    const bw2 = wide ? tw - 150 : tw - 24;
+    for (let j = 0; j < MAX_LV; j++) uiRR(x + 12 + j*(bw2/MAX_LV), y + 28, bw2/MAX_LV - 2, 6, 2, j < L ? u.col : "rgba(255,255,255,.14)");
+    if (wide) uiText(u.blurb, x + 12, y + 50, 11, "#a8c8e8", "left", null);
+    const bwid = wide ? 118 : tw - 16, bx = wide ? x + tw - bwid - 10 : x + 8, byy = wide ? y + th - 44 : y + th - 44;
+    if (max){ uiText("MAXED", bx + bwid/2, byy + 26, 16, "#ffd34d", "center"); }
+    else uiButton(bx, byy, bwid, 34, !TEST.on && state.coins >= cost ? "#5ad85a" : "#4a5070", fmt(cost), () => buyUpgrade(c, i), "coin");
+  });
+}
+/* ============================== APP INTERFACE ==============================
+   Shared by Spacey Jump, Fishy Swimmer and Traffic Runner. The game fills the whole screen like an app, and
+   everything else lives inside it: Home, Ships (the collection), Crates and Scores are screens drawn here, and the
+   account box pops up as a card on top. All of it is drawn in its own "interface space" so it looks the same in
+   every game: about 360 units wide on a phone held upright, about 420 units tall on a wide screen.
+   Each game fills in UI_CFG with the few things that differ (its name, colors, units, crates and so on). */
+document.body.classList.add("app", "fs");
+const UI = {W:360, H:640, U:1, buttons:[], pressed:null, screen:"home", scroll:0, maxScroll:0, cells:[], drag:null, t:0};
+const UFONT = size => `700 ${size}px "Pixelify Sans", "Courier New", monospace`;
+try { document.fonts && document.fonts.load('700 24px "Pixelify Sans"'); } catch (e) {}
+const noLig = str => String(str).replace(/f(?=[fil])/g, "f\u200C");   // the font joins "fi" into one odd-looking letter
+function uiMeasure(str, size){ ctx.font = UFONT(size); return ctx.measureText(noLig(str)).width; }
+// The font's own "5" is hard to read, so every 5 is drawn as a clear blocky 5 that fits the same space.
+const UI_FIVE = ["#####", "#....", "####.", "....#", "....#", "#...#", ".###."];
+function uiFive(x, y, m, grow, col){   // x = left edge of the character's space, y = baseline, m = its measurements
+  const h = m.actualBoundingBoxAscent || m.width*1.4, cell = h/7, gw = cell*5, gx = x + (m.width - gw)/2;
+  ctx.fillStyle = col;
+  UI_FIVE.forEach((row, r) => { for (let c = 0; c < 5; c++) if (row[c] === "#") ctx.fillRect(gx + c*cell - grow, y - h + r*cell - grow, cell + grow*2 + .3, cell + grow*2 + .3); });
+}
+// chunky outlined text with a 3D drop underneath
+function uiText(str, x, y, size, col, align, deep){
+  str = noLig(str);
+  ctx.font = UFONT(size); ctx.textAlign = align || "left"; ctx.lineJoin = "round";
+  const d = Math.max(2, Math.round(size*.1)), dark = deep === undefined ? "#0a0c1e" : deep, lw = Math.max(3, size*.22);
+  if (!str.includes("5")){
+    if (dark){ ctx.fillStyle = dark; ctx.strokeStyle = dark; ctx.lineWidth = lw; for (let k = d; k >= 1; k--){ ctx.strokeText(str, x, y + k); ctx.fillText(str, x, y + k); } ctx.strokeText(str, x, y); }
+    ctx.fillStyle = col; ctx.fillText(str, x, y); return;
+  }
+  // with 5s in it: lay the text out piece by piece, left to right
+  const parts = str.split(/(5)/).filter(Boolean), m5 = ctx.measureText("5"), total = ctx.measureText(str).width;
+  let x0 = ctx.textAlign === "center" ? x - total/2 : ctx.textAlign === "right" ? x - total : x;
+  ctx.textAlign = "left";
+  const pass = (dy, outline, fillCol) => { let px = x0;
+    parts.forEach(t => { if (t === "5"){ uiFive(px, y + dy, m5, outline ? lw/2 : 0, fillCol); px += m5.width; }
+      else { if (outline){ ctx.strokeStyle = fillCol; ctx.lineWidth = lw; ctx.strokeText(t, px, y + dy); } ctx.fillStyle = fillCol; ctx.fillText(t, px, y + dy); px += ctx.measureText(t).width; } }); };
+  if (dark){ for (let k = d; k >= 1; k--) pass(k, true, dark); pass(0, true, dark); }
+  pass(0, false, col);
+}
+function uiRR(x, y, w, h, r, fill){ ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
+function uiPill(x, y, w, h, fill, edge){ uiRR(x, y + 3, w, h, h/2, "rgba(0,0,0,.35)"); uiRR(x, y, w, h, h/2, fill); if (edge){ ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke(); } }
+function uiCard(x, y, w, h){ uiRR(x, y + 6, w, h, 16, "rgba(0,0,0,.4)"); uiRR(x, y, w, h, 16, UI_CFG.cardCol || "#1c2350"); ctx.strokeStyle = UI_CFG.cardEdge || "#3a4a8a"; ctx.lineWidth = 2.5; ctx.stroke(); uiRR(x + 4, y + 4, w - 8, h*.4, 12, "rgba(255,255,255,.06)"); }
+function uiShade(hex, amt){ let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); if (amt < 0){ r *= 1 + amt; g *= 1 + amt; b *= 1 + amt; } else { r += (255 - r)*amt; g += (255 - g)*amt; b += (255 - b)*amt; } return `rgb(${r|0},${g|0},${b|0})`; }
+function uiCoin(x, y, r){ ctx.fillStyle = "#8a5a10"; ctx.beginPath(); ctx.arc(x, y, r + 1, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = "#ffc83a"; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = "#fff3b0"; uiStar(x, y, r*.5); }
+function uiStar(x, y, r){ ctx.beginPath(); for (let i = 0; i < 10; i++){ const a = i*Math.PI/5 - Math.PI/2, rr = i % 2 ? r*.45 : r; ctx.lineTo(x + Math.cos(a)*rr, y + Math.sin(a)*rr); } ctx.closePath(); ctx.fill(); }
+// a big pressable button with a thick bottom edge; it sinks when pressed
+function uiButton(x, y, w, h, col, label, act, icon, badge){
+  const id = Math.round(x) + "," + Math.round(y), down = UI.pressed === id, lift = down ? 2 : 6;
+  uiRR(x, y + 6, w, h, 12, uiShade(col, -.45));
+  uiRR(x, y + 6 - lift, w, h, 12, col);
+  uiRR(x + 4, y + 9 - lift, w - 8, h*.38, 9, "rgba(255,255,255,.22)");
+  const cy = y + 6 - lift + h/2, size = h >= 44 ? 24 : 15;
+  let lx = x + w/2;
+  if (icon){ const ix = label ? x + (h >= 44 ? 30 : 20) : x + w/2, s2 = h >= 44 ? 1 : .72; ctx.save(); ctx.translate(ix, cy); ctx.scale(s2, s2); uiIcon(icon); ctx.restore(); if (label) lx = x + w/2 + (h >= 44 ? 12 : 9); }
+  if (label) uiText(label, lx, cy + size*.36, size, "#ffffff", "center", uiShade(col, -.55));
+  if (badge){ ctx.fillStyle = "#ff3a5a"; ctx.beginPath(); ctx.arc(x + w - 4, y + 2 - lift + 6, 9, 0, Math.PI*2); ctx.fill(); uiText("!", x + w - 4, y + 7 - lift + 6, 13, "#ffffff", "center", null); }
+  UI.buttons.push({x, y: y - 2, w, h: h + 8, act, id, label, icon});
+}
+function uiIcon(k){ ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#ffffff";
+  if (k === "play"){ ctx.beginPath(); ctx.moveTo(-6, -9); ctx.lineTo(9, 0); ctx.lineTo(-6, 9); ctx.closePath(); ctx.fill(); }
+  else if (k === "pause"){ ctx.fillRect(-7, -8, 5, 16); ctx.fillRect(2, -8, 5, 16); }
+  else if (k === "coin"){ uiCoin(0, 0, 7); }
+  else if (k === "home"){ ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(11, 0); ctx.lineTo(7, 0); ctx.lineTo(7, 9); ctx.lineTo(-7, 9); ctx.lineTo(-7, 0); ctx.lineTo(-11, 0); ctx.closePath(); ctx.fill(); ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(-2, 3, 4, 6); }
+  else if (k === "back"){ ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(0, -9); ctx.lineTo(0, -4); ctx.lineTo(10, -4); ctx.lineTo(10, 4); ctx.lineTo(0, 4); ctx.lineTo(0, 9); ctx.closePath(); ctx.fill(); }
+  else if (k === "trophy"){ ctx.fillRect(-7, -9, 14, 9); ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI); ctx.fill(); ctx.fillRect(-2, 5, 4, 4); ctx.fillRect(-6, 8, 12, 3); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(-8, -4, 3.4, Math.PI*.5, Math.PI*1.5); ctx.stroke(); ctx.beginPath(); ctx.arc(8, -4, 3.4, -Math.PI*.5, Math.PI*.5); ctx.stroke(); }
+  else if (k === "person"){ ctx.beginPath(); ctx.arc(0, -4, 5, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(0, 8, 9, 6, 0, Math.PI, 0); ctx.fill(); }
+  else if (k === "sound" || k === "mute"){ ctx.beginPath(); ctx.moveTo(-9, -4); ctx.lineTo(-4, -4); ctx.lineTo(2, -9); ctx.lineTo(2, 9); ctx.lineTo(-4, 4); ctx.lineTo(-9, 4); ctx.closePath(); ctx.fill(); ctx.lineWidth = 2;
+    if (k === "sound"){ ctx.beginPath(); ctx.arc(3, 0, 5, -.9, .9); ctx.stroke(); ctx.beginPath(); ctx.arc(3, 0, 9, -.9, .9); ctx.stroke(); } else { ctx.beginPath(); ctx.moveTo(5, -5); ctx.lineTo(12, 5); ctx.moveTo(12, -5); ctx.lineTo(5, 5); ctx.stroke(); } }
+  else if (k === "crate"){ ctx.fillRect(-9, -4, 18, 12); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(-9, -1, 18, 2); ctx.fillStyle = "#ffffff"; ctx.fillRect(-10, -8, 20, 5); ctx.fillStyle = "#ffd34d"; ctx.fillRect(-2, -6, 4, 4); }
+  else if (k === "collection"){ ctx.save(); ctx.scale(.9, .9); UI_CFG.icon(ctx); ctx.restore(); }
+  else if (UI_CFG.icons && UI_CFG.icons[k]) UI_CFG.icons[k](ctx);
+}
+function uiCoins(rx, y){ const ct = fmt(state.coins), w = uiMeasure(ct, 18) + 44; uiPill(rx - w, y, w, 32, "rgba(10,14,40,.75)", "rgba(255,211,77,.55)"); uiCoin(rx - w + 17, y + 16, 8); uiText(ct, rx - 12, y + 23, 18, "#ffe08a", "right"); }
+function uiDim(a){ ctx.fillStyle = `rgba(4,6,18,${a})`; ctx.fillRect(0, 0, UI.W, UI.H); }
+const signedIn = () => Saves.mode === "fire";
+function openSheet(mode){ document.body.classList.add("sheet"); if (mode) setAuthMode(mode); }
+function closeSheet(){ document.body.classList.remove("sheet"); }
+const CRW = () => UI_CFG.crateWord || "crate";
+const canCrate = () => !TEST.on && UI_CFG.crates().some(k => state.coins >= k.cost);
+function goScreen(s){ if (game.state !== "ready") UI_CFG.toReady(); UI.screen = s; UI.scroll = 0; }
+
+/* ---------- drawing, once per frame, after the game has drawn its world ---------- */
+function uiFrame(dt){
+  const w = cv.width, h = cv.height;
+  if (w/h < 1.05){ UI.W = 360; UI.H = 360*h/w; } else { UI.H = 420; UI.W = 420*w/h; }
+  UI.U = w/UI.W; UI.t += dt || 1/60;
+  ctx.save(); ctx.setTransform(UI.U, 0, 0, UI.U, 0, 0); UI.buttons = [];
+  const st = game.state, W = UI.W, H = UI.H, playing = st === "running" || st === UI_CFG.monsterState;
+  if (playing || game.paused) uiHUD();
+  if (game.banner && st === "running" && !game.paused) uiBanner();
+  if (UI_CFG.extra) UI_CFG.extra(W, H);
+  if (st === "ready") uiMenu();
+  if (st === "over") uiOver();
+  if (game.paused){ uiDim(.55); uiText("PAUSED", W/2, H*.38, 44, "#ffffff", "center"); uiButton(W/2 - 85, H*.38 + 26, 170, 54, "#5ad85a", "RESUME", () => UI_CFG.resume(), "play"); }
+  if (st !== "ready" || UI.screen === "home") uiCoins(W - 12, 12);
+  ctx.restore();
+}
+function uiHUD(){
+  const W = UI.W, sc = fmt(UI_CFG.score());
+  uiText(sc, 14, 50, 42, "#ffffff", "left");
+  uiText(UI_CFG.unit, 20 + uiMeasure(sc, 42), 50, 16, UI_CFG.accent, "left");
+  const p = UI_CFG.place(), pw = Math.max(116, uiMeasure(p.name, 13) + 28);
+  uiPill(12, 60, pw, 28, "rgba(10,14,40,.75)", UI_CFG.accentEdge);
+  uiText(p.name, 12 + pw/2, 77, 13, "#ffd27a", "center");
+  uiRR(20, 81, pw - 16, 3, 2, "rgba(255,255,255,.15)"); uiRR(20, 81, (pw - 16)*Math.min(1, p.progress), 3, 2, UI_CFG.accent);
+  if (game.state === "running" && !game.paused) uiButton(W - 54, 52, 42, 36, "#3a4478", "", () => UI_CFG.pause(), "pause");
+}
+function uiBanner(){
+  const b = game.banner, a = Math.min(1, b.t*2), W = UI.W, y = UI.H*.3;
+  ctx.globalAlpha = a;
+  const pre = UI_CFG.bannerPre && UI_CFG.bannerPre(b.text);
+  if (pre) uiText(pre, W/2, y - 34, 14, UI_CFG.accent, "center");
+  const main = UI_CFG.bannerMain ? UI_CFG.bannerMain(b.text) : b.text.toUpperCase();
+  uiText(main, W/2, y, main.length > 18 ? 26 : 34, "#ffd27a", "center");
+  if (b.sub) uiText(b.sub, W/2, y + 28, 14, "#ffffff", "center");
+  ctx.globalAlpha = 1;
+}
+// home, collection, crates, scores
+function uiMenu(){
+  const s = UI.screen;
+  if (s !== "home") uiDim(.72);
+  if (s === "home") uiHome(); else if (UI_CFG.screens && UI_CFG.screens[s]) UI_CFG.screens[s](); else if (s === "ships") uiCollection(); else if (s === "crates") uiCrates(); else if (s === "scores") uiScores();
+}
+function uiHeader(title){
+  const g = ctx.createLinearGradient(0, 0, 0, 84); g.addColorStop(0, "rgba(4,6,16,.88)"); g.addColorStop(1, "rgba(4,6,16,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, UI.W, 84);
+  uiButton(12, 12, 48, 40, "#5a6ab8", "", () => goScreen("home"), "back");
+  uiText(title, UI.W/2, 44, UI.W < 420 ? 26 : 30, "#ffffff", "center");
+}
+function uiHome(){
+  const W = UI.W, H = UI.H, g = ctx.createLinearGradient(0, 0, 0, 170); g.addColorStop(0, "rgba(4,6,16,.55)"); g.addColorStop(1, "rgba(4,6,16,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 170);
+  uiButton(12, 12, 44, 38, "#3a4478", "", () => Sound.setSfx(!Sound.prefs.sfx), Sound.prefs.sfx ? "sound" : "mute");
+  const T = UI_CFG.title, big = Math.max(40, Math.min(W < 420 ? 52 : 62, (H - 250)/2.3)), block = big*2.1 + 250;
+  const ly = Math.max(60, (H - block)*.42) + big*.8;
+  uiText(T[0][0], W/2, ly, big, T[0][1], "center", T[0][2]);
+  uiText(T[1][0], W/2, ly + big*.98, big*1.1, T[1][1], "center", T[1][2]);
+  const py = ly + big*1.32;
+  if (state.best){ const t = "BEST  " + fmt(state.best) + " " + UI_CFG.unit, w = uiMeasure(t, 15) + 30; uiPill(W/2 - w/2, py, w, 28, "rgba(10,14,40,.75)", "rgba(255,211,77,.55)"); uiText(t, W/2, py + 20, 15, "#ffd27a", "center"); }
+  const by = py + 44;
+  uiButton(W/2 - 88, by, 176, 56, "#5ad85a", "PLAY", () => UI_CFG.play(), "play");
+  const nav = UI_CFG.nav ? UI_CFG.nav() : [
+    [UI_CFG.collectionShort, "#3a8ae8", "collection", () => goScreen("ships")],
+    [CRW().toUpperCase() + "S", "#9a5ae0", "crate", () => goScreen("crates"), canCrate()],
+    ["SCORES", "#e8a02a", "trophy", () => goScreen("scores")],
+    [signedIn() ? "ME" : "SAVE", "#2ab8a8", "person", () => openSheet(signedIn() ? null : "signup"), !signedIn()]];
+  const sw = 64, gap = 10, x0 = W/2 - (sw*nav.length + gap*(nav.length - 1))/2, y2 = by + 72;
+  nav.forEach(([t, col, icon, act, badge], i) => { uiButton(x0 + i*(sw + gap), y2, sw, 50, col, "", act, icon, badge); uiText(t, x0 + sw/2 + i*(sw + gap), y2 + 70, 12, "#d8deef", "center"); });
+  if (H - (y2 + 70) > 50){ uiText(UI_CFG.hint(), W/2, y2 + 96, 13, "#c8d0e8", "center"); const c = curCar(); uiText(c.name.toUpperCase(), W/2, y2 + 116, 13, isCreator(c) ? "#ffd34d" : TIERS[c.tier].color, "center"); }
+  if (TEST.on) uiText("TEST MODE", W/2, 74, 13, "#ffd34d", "center");
+}
+/* the collection: your current pick up top, every one in a scrolling grid below */
+function uiCollection(){
+  const W = UI.W, H = UI.H, c = curCar(), owned = Object.keys(state.owned).length;
+  const py0 = 66; uiCard(12, py0, W - 24, 108);
+  const pw = Math.min(150, W*.36);
+  UI_CFG.preview(ctx, c, 24 + pw/2, py0 + 54 + Math.sin(UI.t*2.4)*3, pw, false, UI.t);
+  const tx = 32 + pw;
+  uiText(c.name, tx, py0 + 38, W < 420 ? 17 : 22, "#ffffff", "left");
+  uiText(TIERS[c.tier].name.toUpperCase(), tx, py0 + 62, 13, TIERS[c.tier].color, "left");
+  uiText(UI_CFG.perk(c), tx, py0 + 84, 12, "#a8b2d8", "left", null);
+  const top = py0 + 120, bottom = H - 12, cols = W < 440 ? 3 : W < 700 ? 5 : 6, gap = 8, cw = (W - 24 - gap*(cols - 1))/cols, ch = cw*.8 + 30;
+  const list = SORTED, rows = Math.ceil(list.length/cols);
+  UI.maxScroll = Math.max(0, rows*(ch + gap) - (bottom - top) + 8); UI.scroll = Math.min(UI.scroll, UI.maxScroll);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, top, W, bottom - top); ctx.clip();
+  UI.cells = [];
+  list.forEach((s, i) => { const col = i % cols, row = Math.floor(i/cols), x = 12 + col*(cw + gap), y = top + row*(ch + gap) - UI.scroll;
+    if (y > bottom || y + ch < top) return;
+    const own = TEST.on || !!state.owned[s.id], sel = s.id === c.id, tc = TIERS[s.tier].color;
+    uiRR(x, y + 4, cw, ch, 10, "rgba(0,0,0,.35)"); uiRR(x, y, cw, ch, 10, own ? (UI_CFG.cardCol || "#1c2350") : "#141830");
+    ctx.strokeStyle = sel ? "#ffffff" : own ? tc : "#2a3058"; ctx.lineWidth = sel ? 3 : 2; ctx.beginPath(); ctx.roundRect(x, y, cw, ch, 10); ctx.stroke();
+    UI_CFG.preview(ctx, s, x + cw/2, y + cw*.4, cw*.72, !own, 0);
+    const nm = own ? (s.name.length > 13 ? s.name.slice(0, 12) + "…" : s.name) : "???";
+    uiText(nm, x + cw/2, y + ch - 20, Math.max(9, Math.min(12, cw/10)), "#ffffff", "center");
+    uiText(TIERS[s.tier].name.toUpperCase(), x + cw/2, y + ch - 7, Math.max(8, Math.min(10, cw/12)), tc, "center", null);
+    UI.cells.push({x, y, w:cw, h:ch, id:s.id, own}); });
+  ctx.restore();
+  if (UI.maxScroll > 0){ const bh = (bottom - top)*(bottom - top)/(bottom - top + UI.maxScroll); uiRR(W - 6, top + (bottom - top - bh)*UI.scroll/UI.maxScroll, 4, bh, 2, "rgba(255,255,255,.25)"); }
+  uiHeader(UI_CFG.collectionTitle); uiCoins(W - 12, 12);
+  uiText(fmt(owned) + " / " + CHARS.length, W/2, 62, 12, "#a8b2d8", "center", null);
+}
+/* crates */
+const uiCrateCvs = {};
+function uiCrates(){
+  const W = UI.W, H = UI.H; uiHeader(CRW().toUpperCase() + "S"); uiCoins(W - 12, 12);
+  const list = UI_CFG.crates(), wide = W >= 560, n = list.length, cw = wide ? Math.min(270, (W - 24 - 16*(n - 1))/n) : W - 24, chh = wide ? 280 : 172;
+  list.forEach((k, i) => {
+    const x = wide ? W/2 - (cw*n + 16*(n - 1))/2 + i*(cw + 16) : 12, y = wide ? 78 : 76 + i*(chh + 14), can = state.coins >= k.cost && !TEST.on;
+    uiCard(x, y, cw, chh);
+    if (!uiCrateCvs[k.kind]){ uiCrateCvs[k.kind] = document.createElement("canvas"); uiCrateCvs[k.kind].width = uiCrateCvs[k.kind].height = 300; }
+    UI_CFG.drawCrate(uiCrateCvs[k.kind].getContext("2d"), k.kind, UI.t);
+    const sz = wide ? 150 : 116;
+    ctx.drawImage(uiCrateCvs[k.kind], wide ? x + cw/2 - sz/2 : x + 4, wide ? y + 6 : y + chh/2 - sz/2 - 6, sz, sz);
+    const tx = wide ? x + cw/2 : x + sz + 12, al = wide ? "center" : "left";
+    uiText(k.name, tx, wide ? y + 176 : y + 40, wide ? 21 : 19, "#ffffff", al);
+    uiText(k.odds, tx, wide ? y + 198 : y + 62, 12, "#ff9ad8", al, null);
+    const bw = wide ? 156 : Math.min(156, cw - sz - 24), bx = wide ? x + cw/2 - bw/2 : tx;
+    uiButton(bx, wide ? y + 214 : y + 82, bw, 44, can ? "#5ad85a" : "#4a5070", fmt(k.cost), () => { if (TEST.on) toast("Opening " + CRW() + "s is paused in test mode"); else if (state.coins < k.cost) toast(fmt(k.cost - state.coins) + " more coins needed"); else k.open(); }, "coin");
+  });
+  const cheapest = Math.min(...list.map(k => k.cost)), dear = Math.max(...list.map(k => k.cost));
+  const yb = wide ? 78 + chh + 26 : 76 + n*(chh + 14) + 10;
+  uiText(state.coins >= dear ? (n > 1 ? "You can open any " + CRW() + "!" : "You can open a " + CRW() + "!") : state.coins >= cheapest ? fmt(dear - state.coins) + " more coins for the best " + CRW() : fmt(cheapest - state.coins) + " more coins for a " + CRW(), W/2, yb, 14, "#c8d0e8", "center");
+  uiText("Duplicates pay back coins", W/2, yb + 22, 12, "#8a94b8", "center", null);
+}
+/* scores */
+function uiScores(){
+  const W = UI.W, H = UI.H; uiHeader("SCORES"); uiCoins(W - 12, 12);
+  const wide = W >= 560, cw = wide ? Math.min(340, (W - 48)/2) : W - 24;
+  const x1 = wide ? W/2 - cw - 8 : 12, y1 = 76, h1 = wide ? 300 : 262;
+  uiCard(x1, y1, cw, h1);
+  uiText("TODAY'S TOP 10", x1 + cw/2, y1 + 30, 18, "#ffd27a", "center");
+  const rows = (typeof LB !== "undefined" && LB.rows) ? LB.rows : [];
+  if (!signedIn()){
+    uiText("Save your progress to join", x1 + cw/2, y1 + 72, 14, "#c8d0e8", "center", null);
+    uiText("the daily leaderboard", x1 + cw/2, y1 + 92, 14, "#c8d0e8", "center", null);
+    uiButton(x1 + cw/2 - 82, y1 + 110, 164, 44, "#2ab8a8", "SIGN UP", () => openSheet("signup"), "person");
+    uiButton(x1 + cw/2 - 62, y1 + 170, 124, 36, "#4a5a98", "LOG IN", () => openSheet("login"));
+  } else if (!rows.length) uiText("No scores yet today. Be first!", x1 + cw/2, y1 + 80, 14, "#c8d0e8", "center", null);
+  else { const lh = Math.min(22, (h1 - 54)/10);
+    rows.slice(0, 10).forEach((r, i) => { const y = y1 + 58 + i*lh, me = r.id === Saves.uid;
+      if (me) uiRR(x1 + 8, y - lh + 6, cw - 16, lh, 6, "rgba(127,215,255,.15)");
+      uiText(String(i + 1), x1 + 24, y, 14, i < 3 ? ["#ffd34d","#d8dce8","#e8a060"][i] : "#a8b2d8", "center", null);
+      uiText(cleanName(r.name) || UI_CFG.defaultName, x1 + 42, y, 14, me ? "#7fd7ff" : "#ffffff", "left", null);
+      uiText(fmt(Math.floor(+r.best || 0)) + " " + UI_CFG.unit.toLowerCase(), x1 + cw - 14, y, 14, "#ffe08a", "right", null); }); }
+  const x2 = wide ? W/2 + 8 : 12, y2 = wide ? y1 : y1 + h1 + 14, h2 = 182;
+  uiCard(x2, y2, cw, h2);
+  uiText("YOUR RECORDS", x2 + cw/2, y2 + 30, 18, "#7fd7ff", "center");
+  UI_CFG.records().forEach(([a, b], i) => { uiText(a, x2 + 16, y2 + 62 + i*24, 14, "#a8b2d8", "left", null); uiText(b, x2 + cw - 16, y2 + 62 + i*24, 15, "#ffffff", "right", null); });
+}
+/* the crash screen: a score card and big buttons */
+function uiOver(){
+  const W = UI.W, H = UI.H, o = UI_CFG.overInfo();
+  uiDim(o.dark ? .78 : .5);
+  const top = Math.max(108, H*.24);
+  uiText(o.title, W/2, top, W < 420 ? 40 : 48, o.col, "center", o.deep);
+  const cw = Math.min(310, W - 40), cx = W/2 - cw/2, cy = top + 18;
+  uiCard(cx, cy, cw, 124);
+  const sc = fmt(UI_CFG.score());
+  uiText(sc, W/2 - 10, cy + 58, 50, "#ffffff", "center");
+  uiText(UI_CFG.unit, W/2 + uiMeasure(sc, 50)/2 - 4, cy + 58, 17, UI_CFG.accent, "left");
+  if (game.newBest){ uiPill(W/2 - 60, cy + 68, 120, 24, "#ffd34d", "#a87a10"); uiText("NEW BEST!", W/2, cy + 86, 15, "#5a3a00", "center", null); }
+  else uiText("BEST  " + fmt(state.best) + " " + UI_CFG.unit, W/2, cy + 86, 14, "#9aa4c8", "center");
+  uiText(o.place, cx + 16, cy + 112, 14, "#ffd27a", "left");
+  const cs = "+" + game.runCoins; uiText(cs, cx + cw - 16, cy + 112, 16, "#ffe08a", "right"); uiCoin(cx + cw - 28 - uiMeasure(cs, 16), cy + 106, 7);
+  const by = cy + 142;
+  if (game.t - game.overT > .5){
+    uiButton(W/2 - 88, by, 176, 56, "#5ad85a", "PLAY", () => UI_CFG.play(), "play");
+    const nav = UI_CFG.overNav ? UI_CFG.overNav() : [["#5a6ab8", "home", () => goScreen("home")], ["#3a8ae8", "collection", () => goScreen("ships")], ["#9a5ae0", "crate", () => goScreen("crates"), canCrate()]];
+    const sw = 72, gap = 8, x0 = W/2 - (sw*nav.length + gap*(nav.length - 1))/2;
+    nav.forEach(([col, icon, act, badge], i) => uiButton(x0 + i*(sw + gap), by + 70, sw, 42, col, "", act, icon, badge));
+  }
+}
+
+/* ---------- input: buttons first, then menu dragging and taps, and only then the game itself ---------- */
+function uiPoint(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left)*cv.width/r.width/UI.U, (e.clientY - r.top)*cv.height/r.height/UI.U]; }
+function uiHit(e){ const [x, y] = uiPoint(e); return UI.buttons.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h); }
+// returns true when the interface used the tap, so the game should ignore it
+function uiPointerDown(e){
+  if (typeof cfOpen !== "undefined" && cfOpen) return true;
+  if (document.body.classList.contains("sheet")) return true;
+  const b = uiHit(e);
+  if (b){ UI.pressed = b.id; Sound.click && Sound.click(); setTimeout(() => { UI.pressed = null; b.act(); }, 90); return true; }
+  if (game.state === "ready" && UI.screen !== "home"){ const [x, y] = uiPoint(e); const cell = UI.screen === "ships" && UI.cells.find(c => x >= c.x && x <= c.x + c.w && y >= c.y && y <= c.y + c.h);
+    UI.drag = {y, s0: UI.scroll, moved:false, tap: cell ? () => { if (cell.own){ Sound.click && Sound.click(); selectChar(cell.id); } else toast(UI_CFG.lockedMsg); } : null}; return true; }
+  if (game.state === "over") return true;            // after a crash, use the buttons
+  if (game.paused) return true;
+  return false;
+}
+cv.addEventListener("pointermove", e => { const d = UI.drag; if (!d) return; const [, y] = uiPoint(e); if (Math.abs(y - d.y) > 6) d.moved = true; if (d.moved) UI.scroll = Math.max(0, Math.min(UI.maxScroll, d.s0 - (y - d.y))); });
+cv.addEventListener("pointerup", () => { const d = UI.drag; UI.drag = null; if (d && !d.moved && d.tap) d.tap(); });
+cv.addEventListener("wheel", e => { if (game.state === "ready" && UI.screen === "ships"){ e.preventDefault(); UI.scroll = Math.max(0, Math.min(UI.maxScroll, UI.scroll + e.deltaY*.5)); } }, {passive:false});
+// keyboard: returns true when the interface used the key
+function uiKey(e){
+  if (document.body.classList.contains("sheet")){ if (e.key === "Escape") closeSheet(); return e.key === "Escape" || e.code === "Space" && !typing(); }
+  if (game.state === "ready" && UI.screen !== "home"){ if (e.key === "Escape") goScreen("home"); return e.key === "Escape" || e.code === "Space" || e.code === "Enter"; }
+  return false;
+}
+$("sheetClose").addEventListener("click", closeSheet);
+
+/* ============================== BOOT ============================== */
+function bootLocal(){
+  const list = Saves.profiles();
+  if (!LS.get(PREFIX+"profiles")) Saves.setProfiles(list);
+  const cur = LS.get(PREFIX+"current");
+  Saves.profile = list.includes(cur) ? cur : list[0];
+  state = Saves.loadLocal(Saves.profile);
+  setSaveStatus("local");
+}
+function authError(e){
+  const m = {
+    "auth/invalid-credential":"That email and password don't match. Check them or reset your password.",
+    "auth/wrong-password":"That email and password don't match. Check them or reset your password.",
+    "auth/user-not-found":"No account uses that email yet. Choose Create account.",
+    "auth/email-already-in-use":"An account already uses that email. Choose Log in instead.",
+    "auth/weak-password":"Use a password with at least 6 characters.",
+    "auth/invalid-email":"Enter a full email address, like name@example.com.",
+    "auth/missing-password":"Enter your password.",
+    "auth/too-many-requests":"Too many tries. Wait a few minutes, then try again.",
+    "auth/popup-closed-by-user":"Google sign-in was closed before it finished.",
+    "auth/popup-blocked":"Your browser blocked the Google sign-in window. Allow pop-ups for this site and try again.",
+    "auth/unauthorized-domain":"This website isn't on the Firebase list of authorized domains yet (Authentication > Settings).",
+    "auth/operation-not-allowed":"This sign-in method isn't turned on in Firebase yet (Authentication > Sign-in method).",
+  };
+  return m[e && e.code] || ("Sign-in didn't work: " + ((e && e.message) || "unknown error"));
+}
+/* ---------- daily leaderboard (resets at midnight US Eastern) ---------- */
+const LB = { day:null, unsub:null, rows:[], myBest:0 };
+function todayKey(){ return new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()); }
+function resetText(){
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hour:"numeric",minute:"numeric",hourCycle:"h23"}).formatToParts(new Date()).map(p=>[p.type,p.value]));
+  const left = 24*60 - (+parts.hour*60 + +parts.minute), h = Math.floor(left/60), m = left%60;
+  return "Resets in " + (h ? h + "h " : "") + m + "m (midnight Eastern)";
+}
+const myDailyRef = () => Saves.fs.collection("surfdaily").doc(LB.day).collection("scores").doc(Saves.uid);
+function lbSubscribe(){
+  if (!Saves.fs) return;
+  const day = todayKey();
+  if (LB.day === day && LB.unsub) return;
+  if (LB.unsub) LB.unsub();
+  LB.day = day; LB.rows = []; LB.myBest = 0; renderLB();
+  LB.unsub = Saves.fs.collection("surfdaily").doc(day).collection("scores").orderBy("best","desc").limit(10).onSnapshot(
+    snap => { LB.rows = snap.docs.map(d => Object.assign({id:d.id}, d.data())); $("lbMsg").textContent = ""; renderLB(); },
+    () => { $("lbMsg").textContent = "The leaderboard couldn't load. Check that the newest Firestore rules are published."; LB.unsub = null; });
+  loadMyDaily();
+}
+async function loadMyDaily(){
+  if (Saves.mode !== "fire" || !LB.day) return;
+  try { const d = await myDailyRef().get(); LB.myBest = d.exists ? (d.data().best || 0) : 0; LB.myChar = d.exists ? d.data().char : null; } catch {}
+  renderLB();
+}
+async function submitScore(dist){
+  if (Saves.mode !== "fire" || !Saves.fs || dist <= 0) return;
+  lbSubscribe();
+  if (dist <= LB.myBest) return;
+  LB.myBest = dist; LB.myChar = curCar().id; renderLB();
+  try { await myDailyRef().set({name: state.name || "Rider", best: dist, char: curCar().id, at: Date.now()}); toast("New best today: " + fmt(dist) + " m"); }
+  catch { $("lbMsg").textContent = "Your score couldn't post to the leaderboard. Check that the newest Firestore rules are published."; }
+}
+function renderLB(){
+  const list = $("lbList"); list.textContent = "";
+  $("lbReset").textContent = Saves.fs ? resetText() : "";
+  if (!Saves.fs){ const li = document.createElement("li"); li.className = "empty"; li.textContent = "The leaderboard turns on once player accounts are set up."; list.append(li); $("lbYou").textContent = ""; return; }
+  if (!LB.rows.length){ const li = document.createElement("li"); li.className = "empty"; li.textContent = "No runs yet today. Post the first score!"; list.append(li); }
+  LB.rows.forEach((r, i) => {
+    const li = document.createElement("li"); if (Saves.mode === "fire" && r.id === Saves.uid) li.className = "me";
+    const rk = document.createElement("span"); rk.className = "rk"; rk.textContent = i + 1;
+    const cv = document.createElement("canvas"); cv.width = 144; cv.height = 80;
+    const ch0 = CHARS[+r.char] || CHARS[0];
+    const nm = document.createElement("span"); nm.className = "who2";
+    const n1 = document.createElement("span"); n1.className = "nm"; n1.textContent = cleanName(r.name) || "Rider";
+    const n2 = document.createElement("span"); n2.className = "car"; n2.textContent = ch0.name; if (isCreator(ch0)) n2.classList.add("creator");
+    n2.style.color = isCreator(ch0) ? "" : TIERS[ch0.tier].color; nm.append(n1, n2);
+    const sc = document.createElement("span"); sc.className = "sc"; sc.textContent = fmt(Math.floor(+r.best || 0)) + " m";
+    li.append(rk, cv, nm, sc); list.append(li);
+    const ch = CHARS[+r.char] || CHARS[0];
+    drawChar(setupCanvas(cv), ch, {x:72, y:70, s:3.4, t:0, glow:false});
+  });
+  const you = $("lbYou"); you.textContent = "";
+  if (Saves.mode === "fire"){
+    const inTop = LB.rows.some(r => r.id === Saves.uid);
+    you.innerHTML = LB.myBest ? `Your best today: <b>${fmt(LB.myBest)} m</b>${inTop ? "" : " (not in the top 10 yet)"}` : "Finish a run to post your score for today.";
+  } else {
+    const t = document.createElement("span"); t.textContent = "Only signed-in players appear here.";
+    const b = document.createElement("button"); b.className = "btn small"; b.type = "button"; b.textContent = "Sign up to compete";
+    b.addEventListener("click", () => goAuth("signup"));
+    you.append(t, b);
+  }
+}
+setInterval(() => { if (Saves.fs){ if (todayKey() !== LB.day){ lbSubscribe(); } else $("lbReset").textContent = resetText(); } }, 30000);
+function goAuth(mode){
+  setAuthMode(mode); $("overCta").hidden = true;
+  openSheet(mode);
+  setTimeout(() => $("authEmail").focus({preventScroll:true}), 450);
+}
+function defaultName(u){
+  const first = cleanName(((u && u.displayName) || "").split(" ")[0]);
+  return first || ("Rider" + Math.floor(1000 + Math.random()*9000));
+}
+$("nameForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const n = cleanName($("nameInput").value);
+  if (!n){ toast("Use letters or numbers for your name"); return; }
+  state.name = n; $("nameInput").value = n; Saves.save(true); toast("Leaderboard name saved");
+  if (Saves.mode === "fire" && LB.myBest > 0){ try { await myDailyRef().set({name:n, best:LB.myBest, char: LB.myChar ?? state.selected, at:Date.now()}); } catch {} }
+});
+
+let authMode = "signup";
+function setAuthMode(m){
+  authMode = m;
+  $("tabSignup").setAttribute("aria-pressed", m === "signup");
+  $("tabLogin").setAttribute("aria-pressed", m === "login");
+  $("authSubmit").textContent = m === "signup" ? "Create my free account" : "Log in";
+  $("authPass").setAttribute("autocomplete", m === "signup" ? "new-password" : "current-password");
+  $("authReset").hidden = m === "signup";
+  $("authMsg").textContent = "";
+}
+$("ocAgain").addEventListener("click", () => { $("overCta").hidden = true; startRun(); });
+function bootFirebase(){
+  const cfg = window.FIREBASE_CONFIG;
+  if (!window.firebase || !cfg || !cfg.apiKey || cfg.apiKey.startsWith("PASTE")){ setSaveStatus("nosetup"); return; }
+  let auth, fs;
+  try { firebase.initializeApp(cfg); auth = firebase.auth(); fs = firebase.firestore(); }
+  catch (e) { setSaveStatus("nosetup"); return; }
+  Saves.auth = auth; Saves.fs = fs;
+  renderAccount(); lbSubscribe();
+  const msg = t => { $("authMsg").textContent = t; };
+  const creds = () => [$("authEmail").value.trim(), $("authPass").value];
+  $("authBox").addEventListener("submit", async e => {
+    e.preventDefault(); const [em, pw] = creds();
+    if (authMode === "signup"){
+      msg("Creating your account…");
+      try { await auth.createUserWithEmailAndPassword(em, pw); msg(""); } catch (err) { msg(authError(err)); }
+    } else {
+      msg("Logging in…");
+      try { await auth.signInWithEmailAndPassword(em, pw); msg(""); } catch (err) { msg(authError(err)); }
+    }
+  });
+  $("tabSignup").addEventListener("click", () => setAuthMode("signup"));
+  $("tabLogin").addEventListener("click", () => setAuthMode("login"));
+  $("ocSignup").addEventListener("click", () => goAuth("signup"));
+  $("ocLogin").addEventListener("click", () => goAuth("login"));
+  $("authGoogle").addEventListener("click", async () => {
+    msg("");
+    try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch (err) { msg(authError(err)); }
+  });
+  $("authReset").addEventListener("click", async () => {
+    const em = $("authEmail").value.trim();
+    if (!em){ msg("Type your email above, then choose Forgot password."); return; }
+    try { await auth.sendPasswordResetEmail(em); msg("Check your email for a link to reset your password."); } catch (err) { msg(authError(err)); }
+  });
+  $("logoutBtn").addEventListener("click", () => auth.signOut());
+
+  auth.onAuthStateChanged(async u => {
+    if (!u){
+      if (Saves.mode === "fire"){ if (game.state === "running") endRun(); Saves.mode = "local"; Saves.uid = null; LB.myBest = 0; bootLocal(); renderAll(); renderLB(); toast("Logged out"); }
+      else setSaveStatus("local");
+      renderAccount(); return;
+    }
+    setSaveStatus("saving"); $("saveText").textContent = "Loading your account…";
+    try {
+      const snap = await fs.collection("marina").doc(u.uid).get();
+      const inRun = game.state === "running" ? game.runCoins : 0;
+      Saves.uid = u.uid; Saves.mode = "fire";
+      if (snap.exists){
+        state = sanitize(snap.data()); state.coins += inRun; state.lifetimeCoins += inRun;
+        setSaveStatus("ok"); if (inRun) Saves.save();
+      } else {
+        Saves.save(true);   // first login: carry this device's progress into the new account
+      }
+      $("whoName").textContent = u.displayName || u.email || "Player"; $("authPass").value = "";
+      if (!state.name){ state.name = defaultName(u); Saves.save(); }
+      $("nameInput").value = state.name;
+      lbSubscribe(); loadMyDaily();
+      renderAll(); toast("Welcome, " + (u.displayName || u.email || "rider"));
+    } catch (e) {
+      Saves.mode = "local"; setSaveStatus("fallback"); renderAccount();
+      msg("Logged in, but your save couldn't load. Check the Firestore rules, then reload.");
+    }
+  });
+}
+bootLocal();
+renderSoundButtons();
+renderLB();
+resetRun(); game.state = "ready";
+renderAll();
+requestAnimationFrame(frame);
+bootFirebase();
+})();
+</script>
+</body></html>
